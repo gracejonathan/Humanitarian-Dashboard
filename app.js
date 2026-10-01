@@ -69,40 +69,31 @@ async function getJSON(url, label) {
 function extractPlans(json) {
   const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
   const plans = Array.isArray(raw) ? raw : [];
-  
-  // Dump locations from first entry to understand structure
-  if (plans.length > 0) {
-    const first = plans[0];
-    log(`LOCATIONS_ARRAY_LENGTH: ${Array.isArray(first?.locations) ? first.locations.length : "not array"}`, "wait");
-    if (Array.isArray(first?.locations) && first.locations.length > 0) {
-      const loc = first.locations[0];
-      const locStr = JSON.stringify(loc);
-      for (let i = 0; i < locStr.length; i += 400) {
-        log(`FIRST_LOCATION_DUMP[${i}]: ${locStr.slice(i, i + 400)}`, "wait");
-      }
-    }
-  }
-  
   const map = {};
-  
+
   for (const p of plans) {
-    const id = p?.id;
-    
-    // Country ISO3 is in locations array, first item's refCode
-    let iso = "";
-    if (Array.isArray(p?.locations) && p.locations.length > 0) {
-      const location = p.locations[0];
-      iso = String(location?.refCode || "").toUpperCase();
-    }
-    
-    if (iso && id) {
-      map[iso] = id;
-      log(`OCHA plan matched: ${iso} → plan ${id}`, "ok");
-    }
+    const id = p?.id || p?.planId || p?.plan_id;
+    if (!id) continue;
+
+    const isoCandidates = [
+      p?.iso3,
+      p?.country?.iso3,
+      p?.country?.iso3Code,
+      p?.countryCode,
+      p?.country?.code,
+      p?.operation?.iso3,
+      p?.locations?.[0]?.iso3,
+      p?.locations?.[0]?.refCode,
+      p?.locations?.[0]?.code,
+      p?.locations?.[0]?.pcode,
+      p?.planVersion?.location?.iso3,
+      p?.planVersion?.country?.iso3
+    ].filter(Boolean);
+
+    const iso = String(isoCandidates[0] || "").toUpperCase();
+    if (iso) map[iso] = id;
   }
-  
-  log(`OCHA returned ${Object.keys(map).length} usable country-plan mappings`,
-      Object.keys(map).length ? "ok" : "bad");
+
   return map;
 }
 
@@ -132,6 +123,7 @@ async function discoverOchaPlans() {
     const json = await getJSON(url, "OCHA Humanitarian Programme Cycle plan API");
     if (!json) continue;
     const plans = extractPlans(json);
+    log(`OCHA returned ${Object.keys(plans).length} usable country-plan mappings`, Object.keys(plans).length ? "ok" : "bad");
     if (Object.keys(plans).length) return plans;
   }
   return {};
