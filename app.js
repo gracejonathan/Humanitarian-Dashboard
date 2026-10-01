@@ -74,6 +74,15 @@ function normalizeIso3(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
+function looksLikeInNeedMetric(value) {
+  const label = String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return label.includes("inneed") ||
+    label.includes("peopleinneed") ||
+    label.includes("personsinneed") ||
+    label.includes("peopleneed") ||
+    label.includes("pin");
+}
+
 function recursivelyCollectNumericCandidates(value, matches = []) {
   if (value == null) return matches;
 
@@ -234,22 +243,61 @@ function extractPlans(json) {
 function extractPIN(json) {
   if (!json) return null;
 
-  const preview = JSON.stringify(json);
-  const numericCandidates = recursivelyCollectNumericCandidates(json);
-  const candidateSet = [...new Set(numericCandidates.filter(v => Number.isFinite(v) && v > 0))];
+  const candidates = [];
 
-  if (candidateSet.length > 0) {
-    const selected = candidateSet.sort((a, b) => b - a)[0];
-    return Number(selected);
+  const addCandidate = (value, description = "") => {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      candidates.push({ value: numeric, description: String(description || "") });
+    }
+  };
+
+  const inspectNode = (node) => {
+    if (!node || typeof node !== "object") return;
+
+    if (Array.isArray(node)) {
+      for (const item of node) inspectNode(item);
+      return;
+    }
+
+    const label = String(node?.type ?? node?.name ?? node?.metricType ?? node?.valueType ?? "");
+    if (looksLikeInNeedMetric(label)) {
+      addCandidate(node?.value ?? node?.amount ?? node?.total ?? node?.count ?? node?.number, node?.description || label);
+    }
+
+    for (const child of Object.values(node)) {
+      if (child && typeof child === "object") inspectNode(child);
+    }
+  };
+
+  const attachmentGroups = [
+    json?.data?.attachments,
+    json?.attachments,
+    json?.data?.value?.attachments,
+    json?.data?.plan?.attachments
+  ].filter(Array.isArray).flat();
+
+  for (const attachment of attachmentGroups) {
+    const totals = attachment?.attachmentVersion?.value?.metrics?.values?.totals;
+    if (Array.isArray(totals)) {
+      for (const total of totals) {
+        const label = String(total?.type ?? total?.name ?? total?.metricType ?? "");
+        if (looksLikeInNeedMetric(label)) {
+          addCandidate(total?.value ?? total?.amount ?? total?.total ?? total?.count ?? total?.number, total?.description || label);
+        }
+      }
+    }
+    inspectNode(attachment);
   }
 
-  if (preview.length < 2000) {
-    log(`PIN parser fallback: no numeric candidates found in payload preview: ${preview}`, "bad");
-  } else {
-    log(`PIN parser fallback: no numeric candidates found in large payload preview`, "bad");
+  if (!candidates.length) {
+    inspectNode(json);
   }
 
-  return null;
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => b.value - a.value);
+  return candidates[0];
 }
 
 async function discoverOchaPlans() {
@@ -272,12 +320,12 @@ async function getOchaPIN(crisis, planId) {
   log(`OCHA payload preview for ${crisis.name}: ${payloadPreview}`, "wait");
 
   const pin = extractPIN(json);
-  if (pin != null) {
-    log(`${crisis.name}: ${fmt(pin)} people in need returned by OCHA`, "ok");
-    return pin;
+  if (pin) {
+    log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
+  } else {
+    log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
   }
-  log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
-  return null;
+  return pin;
 }
 
 function render() {
@@ -361,8 +409,8 @@ async function refresh() {
       const row = state.rowById.get(crisis.id);
       if (!row) return null;
 
-      row.peopleInNeed = pin;
-      row.source = `OCHA HPC · current plan`;
+      row.peopleInNeed = pin.value;
+      row.source = `OCHA HPC · ${pin.description || "current plan"}`;
       row.planId = planId;
       row.live = true;
       return crisis.id;
