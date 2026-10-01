@@ -57,7 +57,6 @@ async function getJSON(url, label) {
     if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
     const json = await response.json();
     log(`${label} responded successfully`, "ok");
-    console.log("Raw payload from", url, json);
     return json;
   } catch (e) {
     log(`${label} failed: ${e.name === "AbortError" ? "10-second timeout" : e.message}`, "bad");
@@ -68,48 +67,26 @@ async function getJSON(url, label) {
 }
 
 function extractPlans(json) {
-  log(`DEBUG: extractPlans called with keys: ${Object.keys(json || {}).join(", ")}`, "wait");
-  
   const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
-  log(`DEBUG: extracted raw array length: ${Array.isArray(raw) ? raw.length : "not array"}`, "wait");
-  
   const plans = Array.isArray(raw) ? raw : [];
-  
-  // Dump FULL structure of first entry to understand schema
-  if (plans.length > 0) {
-    const first = plans[0];
-    const dumpStr = JSON.stringify(first);
-    // Split into chunks to avoid log line length limits
-    for (let i = 0; i < dumpStr.length; i += 400) {
-      log(`FIRST_ENTRY_DUMP[${i}]: ${dumpStr.slice(i, i + 400)}`, "wait");
-    }
-    log(`FIRST_ENTRY_KEYS: ${Object.keys(first || {}).join(" | ")}`, "wait");
-  }
-  
   const map = {};
   
   for (const p of plans) {
-    const x = p?.plan || p;
+    const id = p?.id;
     
-    // Try to find ISO3 in multiple paths
-    const isoAttempts = [
-      x?.country?.iso3,
-      x?.country?.iso3Code,
-      x?.countryCode,
-      x?.operation?.iso3,
-      x?.iso3,
-      x?.countryIso3,
-      x?.country?.code,
-      p?.country?.iso3
-    ];
+    // Country ISO3 is in locations array, first item's refCode
+    let iso = "";
+    if (Array.isArray(p?.locations) && p.locations.length > 0) {
+      const location = p.locations[0];
+      iso = String(location?.refCode || "").toUpperCase();
+    }
     
-    const iso = String(isoAttempts.find(v => v) || "").toUpperCase();
-    const id = x?.id || x?.planId || x?.plan_id || p?.id;
-    
-    if (iso && id) map[iso] = id;
+    if (iso && id) {
+      map[iso] = id;
+      log(`OCHA plan matched: ${iso} → plan ${id}`, "ok");
+    }
   }
   
-  log(`DEBUG: extracted ${Object.keys(map).length} mapped plans: ${Object.keys(map).join(", ")}`, "wait");
   return map;
 }
 
