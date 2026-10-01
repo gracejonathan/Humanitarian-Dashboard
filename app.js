@@ -74,6 +74,46 @@ function normalizeIso3(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
+function recursivelyCollectNumericCandidates(value, matches = []) {
+  if (value == null) return matches;
+
+  if (Array.isArray(value)) {
+    for (const item of value) recursivelyCollectNumericCandidates(item, matches);
+    return matches;
+  }
+
+  if (typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      const normalized = String(key).toLowerCase();
+      if ([
+        "people_in_need",
+        "peopleinneed",
+        "people in need",
+        "people_needed",
+        "people_needed_total",
+        "in_need",
+        "inneed",
+        "pin",
+        "people_need",
+        "persons_in_need",
+        "affected",
+        "count",
+        "value",
+        "total"
+      ].includes(normalized)) {
+        const num = Number(child);
+        if (Number.isFinite(num) && num > 0) matches.push(num);
+      }
+      recursivelyCollectNumericCandidates(child, matches);
+    }
+    return matches;
+  }
+
+  const num = Number(value);
+  if (Number.isFinite(num) && num > 0) matches.push(num);
+  return matches;
+}
+
 async function loadChristianPercentages() {
   const fallback = { ...DEFAULT_CHRISTIAN_PERCENTAGES };
   try {
@@ -192,16 +232,24 @@ function extractPlans(json) {
 }
 
 function extractPIN(json) {
-  const candidates = [];
-  const items = Array.isArray(json) ? json : (json?.data || json?.result || json?.values || []);
-  if (!Array.isArray(items)) return null;
+  if (!json) return null;
 
-  for (const item of items) {
-    const value = Number(item?.people_in_need ?? item?.in_need ?? item?.value ?? item?.total ?? item?.amount ?? item?.peopleInNeed);
-    if (Number.isFinite(value)) candidates.push(value);
+  const preview = JSON.stringify(json);
+  const numericCandidates = recursivelyCollectNumericCandidates(json);
+  const candidateSet = [...new Set(numericCandidates.filter(v => Number.isFinite(v) && v > 0))];
+
+  if (candidateSet.length > 0) {
+    const selected = candidateSet.sort((a, b) => b - a)[0];
+    return Number(selected);
   }
 
-  return candidates.length ? Math.max(...candidates) : null;
+  if (preview.length < 2000) {
+    log(`PIN parser fallback: no numeric candidates found in payload preview: ${preview}`, "bad");
+  } else {
+    log(`PIN parser fallback: no numeric candidates found in large payload preview`, "bad");
+  }
+
+  return null;
 }
 
 async function discoverOchaPlans() {
@@ -219,6 +267,10 @@ async function getOchaPIN(crisis, planId) {
   const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
   const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
   if (!json) return null;
+
+  const payloadPreview = JSON.stringify(json).slice(0, 1500);
+  log(`OCHA payload preview for ${crisis.name}: ${payloadPreview}`, "wait");
+
   const pin = extractPIN(json);
   if (pin != null) {
     log(`${crisis.name}: ${fmt(pin)} people in need returned by OCHA`, "ok");
