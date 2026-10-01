@@ -74,15 +74,33 @@ function extractPlans(json) {
   log(`DEBUG: extracted raw array length: ${Array.isArray(raw) ? raw.length : "not array"}`, "wait");
   
   const plans = Array.isArray(raw) ? raw : [];
+  
+  // Log first entry structure
+  if (plans.length > 0) {
+    const first = plans[0];
+    log(`DEBUG: first entry structure: ${JSON.stringify(first).slice(0, 500)}`, "wait");
+    log(`DEBUG: first entry keys: ${Object.keys(first || {}).join(", ")}`, "wait");
+  }
+  
   const map = {};
   
   for (const p of plans) {
     const x = p?.plan || p;
-    const iso = String(
-      x?.country?.iso3 || x?.country?.iso3Code || x?.countryCode ||
-      x?.operation?.iso3 || x?.iso3 || ""
-    ).toUpperCase();
-    const id = x?.id || x?.planId || x?.plan_id;
+    
+    // Try to find ISO3 in multiple paths
+    const isoAttempts = [
+      x?.country?.iso3,
+      x?.country?.iso3Code,
+      x?.countryCode,
+      x?.operation?.iso3,
+      x?.iso3,
+      x?.countryIso3,
+      x?.country?.code,
+      p?.country?.iso3
+    ];
+    
+    const iso = String(isoAttempts.find(v => v) || "").toUpperCase();
+    const id = x?.id || x?.planId || x?.plan_id || p?.id;
     
     if (iso || id) {
       log(`DEBUG: plan entry - iso=${iso || "none"}, id=${id || "none"}`, "wait");
