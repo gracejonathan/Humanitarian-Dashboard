@@ -6,6 +6,189 @@ const state = {
   liveCount: 0
 };
 
+const GLOBAL_CRISIS_SEED = [
+  {
+    id: "sudan",
+    name: "Sudan",
+    iso3: "SDN",
+    region: "East Africa",
+    type: "Conflict / displacement",
+    started: "2023-04-15",
+    christianPresence: "documented",
+    christianLabel: "Documented minority presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/sdn"],
+      ["HDX", "https://data.humdata.org/country/sdn"]
+    ]
+  },
+  {
+    id: "palestine",
+    name: "Occupied Palestinian Territory",
+    iso3: "PSE",
+    region: "Middle East",
+    type: "Conflict / humanitarian emergency",
+    started: "2023-10-07",
+    christianPresence: "documented",
+    christianLabel: "Documented Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/pse"],
+      ["HDX", "https://data.humdata.org/country/pse"]
+    ]
+  },
+  {
+    id: "ukraine",
+    name: "Ukraine",
+    iso3: "UKR",
+    region: "Europe",
+    type: "International armed conflict",
+    started: "2022-02-24",
+    christianPresence: "documented",
+    christianLabel: "Established Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/ukr"],
+      ["HDX", "https://data.humdata.org/country/ukr"]
+    ]
+  },
+  {
+    id: "syria",
+    name: "Syria",
+    iso3: "SYR",
+    region: "Middle East",
+    type: "Conflict / displacement",
+    started: "2011-03-15",
+    christianPresence: "documented",
+    christianLabel: "Documented minority presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/syr"],
+      ["HDX", "https://data.humdata.org/country/syr"]
+    ]
+  },
+  {
+    id: "drc",
+    name: "Democratic Republic of the Congo",
+    iso3: "COD",
+    region: "Central Africa",
+    type: "Conflict / displacement",
+    started: "1996-10-24",
+    christianPresence: "documented",
+    christianLabel: "Large Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/cod"],
+      ["HDX", "https://data.humdata.org/country/cod"]
+    ]
+  },
+  {
+    id: "yemen",
+    name: "Yemen",
+    iso3: "YEM",
+    region: "Middle East",
+    type: "Conflict / food insecurity",
+    started: "2014-09-21",
+    christianPresence: "limited",
+    christianLabel: "Very small / restricted presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/yem"],
+      ["HDX", "https://data.humdata.org/country/yem"]
+    ]
+  },
+  {
+    id: "afghanistan",
+    name: "Afghanistan",
+    iso3: "AFG",
+    region: "South Asia",
+    type: "Protracted crisis",
+    started: "1978-04-27",
+    christianPresence: "limited",
+    christianLabel: "Small / limited presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/afg"],
+      ["HDX", "https://data.humdata.org/country/afg"]
+    ]
+  },
+  {
+    id: "myanmar",
+    name: "Myanmar",
+    iso3: "MMR",
+    region: "Southeast Asia",
+    type: "Conflict / displacement",
+    started: "2021-02-01",
+    christianPresence: "documented",
+    christianLabel: "Documented Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/mmr"],
+      ["HDX", "https://data.humdata.org/country/mmr"]
+    ]
+  },
+  {
+    id: "somalia",
+    name: "Somalia",
+    iso3: "SOM",
+    region: "Horn of Africa",
+    type: "Drought / displacement / conflict",
+    started: "2011-01-01",
+    christianPresence: "documented",
+    christianLabel: "Small documented community",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/som"],
+      ["HDX", "https://data.humdata.org/country/som"]
+    ]
+  },
+  {
+    id: "ethiopia",
+    name: "Ethiopia",
+    iso3: "ETH",
+    region: "East Africa",
+    type: "Conflict / drought / displacement",
+    started: "2020-11-01",
+    christianPresence: "documented",
+    christianLabel: "Large Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/eth"],
+      ["HDX", "https://data.humdata.org/country/eth"]
+    ]
+  },
+  {
+    id: "nigeria",
+    name: "Nigeria",
+    iso3: "NGA",
+    region: "West Africa",
+    type: "Conflict / displacement",
+    started: "2009-01-01",
+    christianPresence: "documented",
+    christianLabel: "Large Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/nga"],
+      ["HDX", "https://data.humdata.org/country/nga"]
+    ]
+  },
+  {
+    id: "haiti",
+    name: "Haiti",
+    iso3: "HTI",
+    region: "Caribbean",
+    type: "Complex emergency / insecurity",
+    started: "2020-01-01",
+    christianPresence: "documented",
+    christianLabel: "Large Christian presence",
+    christianEvidence: "Curated country-level evidence; requires periodic verification",
+    sourceLinks: [
+      ["ReliefWeb", "https://reliefweb.int/country/hti"],
+      ["HDX", "https://data.humdata.org/country/hti"]
+    ]
+  }
+];
+
 const $ = id => document.getElementById(id);
 const fmt = n => n == null ? "—" : new Intl.NumberFormat("en-US").format(Math.round(n));
 const compact = n => {
@@ -40,7 +223,6 @@ function log(message, type = "wait") {
   div.textContent = `[${now}] ${icon} ${message}`;
   $("connectionLog").appendChild(div);
   $("connectionLog").scrollTop = $("connectionLog").scrollHeight;
-  console.log(`[${now}] ${message}`);
 }
 
 function status(text, type = "wait") {
@@ -199,21 +381,13 @@ function render() {
 
 async function refresh() {
   $("connectionLog").innerHTML = "";
-  status("Loading local crisis registry…", "wait");
+  status("Loading global crisis watchlist…", "wait");
   log("Dashboard JavaScript is running", "ok");
 
-  const response = await fetch("data/crises.json", {cache:"no-store"});
-  if (!response.ok) {
-    status("Local crisis registry failed to load", "bad");
-    log(`data/crises.json failed: HTTP ${response.status}`, "bad");
-    return;
-  }
-  state.crises = await response.json();
-  log(`Local crisis registry loaded: ${state.crises.length} crisis records`, "ok");
-
-  state.rows = state.crises.map(x => ({...x, peopleInNeed:null, live:false}));
-  state.rowById = new Map(state.rows.map(row => [row.id, row]));
+  state.crises = GLOBAL_CRISIS_SEED.map(x => ({...x, peopleInNeed:null, live:false}));
+  state.rowById = new Map(state.crises.map(row => [row.id, row]));
   render();
+  log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
 
   status("Connecting to OCHA…", "wait");
   state.discoveredPlans = await discoverOchaPlans();
@@ -247,8 +421,8 @@ async function refresh() {
     status(`Live OCHA connection succeeded · ${state.liveCount} crisis record(s) refreshed`, "ok");
     log(`Refresh complete: ${state.liveCount} live OCHA record(s) loaded`, "ok");
   } else {
-    status("OCHA connection did not return usable PIN data", "bad");
-    log("Refresh complete: no live OCHA PIN values were obtained. The dashboard remains usable.", "bad");
+    status("OCHA connection did not return usable PIN data for the current global watchlist", "bad");
+    log("Refresh complete: no live OCHA PIN values were obtained for the current global watchlist. Source-backed records remain visible.", "bad");
   }
 }
 
