@@ -1,6 +1,7 @@
 const state = {
   crises: [],
   rows: [],
+  rowById: new Map(),
   discoveredPlans: {},
   liveCount: 0
 };
@@ -14,9 +15,22 @@ const compact = n => {
   if (n >= 1e3) return (n / 1e3).toFixed(0) + "K";
   return fmt(n);
 };
+const dateFormatter = new Intl.DateTimeFormat(undefined, {year:"numeric", month:"short", day:"numeric"});
+const formatDate = value => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
+};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
 }[m]));
+
+const debounce = (fn, wait = 200) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), wait);
+  };
+};
 
 function log(message, type = "wait") {
   const now = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"});
@@ -148,7 +162,7 @@ function render() {
       <div class="muted">${r.peopleInNeed != null ? "people in humanitarian need" : "current PIN unavailable"}</div>
       <div class="meta">
         <div class="muted">Crisis began
-          <strong>${new Date(r.started).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})}</strong>
+          <strong>${formatDate(r.started)}</strong>
         </div>
         <div class="muted">Humanitarian source
           <strong>${esc(r.source || "Not available")}</strong>
@@ -183,43 +197,48 @@ async function refresh() {
   log(`Local crisis registry loaded: ${state.crises.length} crisis records`, "ok");
 
   state.rows = state.crises.map(x => ({...x, peopleInNeed:null, live:false}));
+  state.rowById = new Map(state.rows.map(row => [row.id, row]));
   render();
 
   status("Connecting to OCHA…", "wait");
   state.discoveredPlans = await discoverOchaPlans();
 
-  let liveCount = 0;
-  for (const crisis of state.crises) {
-    const planId = state.discoveredPlans[crisis.iso3];
-    if (!planId) {
-      log(`${crisis.name}: no current OCHA plan discovered; retaining source links`, "wait");
-      continue;
-    }
-    const pin = await getOchaPIN(crisis, planId);
-    if (pin) {
-      const row = state.rows.find(x => x.id === crisis.id);
+  const liveResults = await Promise.all(
+    state.crises.map(async crisis => {
+      const planId = state.discoveredPlans[crisis.iso3];
+      if (!planId) {
+        log(`${crisis.name}: no current OCHA plan discovered; retaining source links`, "wait");
+        return null;
+      }
+
+      const pin = await getOchaPIN(crisis, planId);
+      if (!pin) return null;
+
+      const row = state.rowById.get(crisis.id);
+      if (!row) return null;
+
       row.peopleInNeed = pin.value;
       row.source = `OCHA HPC · ${pin.description || "current plan"}`;
       row.planId = planId;
       row.live = true;
-      liveCount++;
-      render();
-    }
-  }
+      return crisis.id;
+    })
+  );
 
-  state.liveCount = liveCount;
+  state.liveCount = liveResults.filter(Boolean).length;
   render();
   $("lastRefresh").textContent = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-  if (liveCount) {
-    status(`Live OCHA connection succeeded · ${liveCount} crisis record(s) refreshed`, "ok");
-    log(`Refresh complete: ${liveCount} live OCHA record(s) loaded`, "ok");
+  if (state.liveCount) {
+    status(`Live OCHA connection succeeded · ${state.liveCount} crisis record(s) refreshed`, "ok");
+    log(`Refresh complete: ${state.liveCount} live OCHA record(s) loaded`, "ok");
   } else {
     status("OCHA connection did not return usable PIN data", "bad");
     log("Refresh complete: no live OCHA PIN values were obtained. The dashboard remains usable.", "bad");
   }
 }
 
+const debouncedRender = debounce(render, 200);
 $("refreshBtn").addEventListener("click", refresh);
-["search","presence","sort"].forEach(id => $(id).addEventListener("input", render));
+["search","presence","sort"].forEach(id => $(id).addEventListener("input", debouncedRender));
 refresh();
 setInterval(refresh, 6 * 60 * 60 * 1000);
