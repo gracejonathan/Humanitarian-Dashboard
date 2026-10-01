@@ -186,7 +186,8 @@ const state = {
   rows: [],
   rowById: new Map(),
   discoveredPlans: {},
-  liveCount: 0
+  liveCount: 0,
+  christianPercentByIso3: {}
 };
 
 const $ = id => document.getElementById(id);
@@ -250,6 +251,82 @@ function findFirstValue(obj, keys) {
     if (found != null) return found;
   }
   return null;
+}
+
+function extractChristianPercent(node) {
+  if (node == null || typeof node !== "object") return null;
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const result = extractChristianPercent(item);
+      if (result != null) return result;
+    }
+    return null;
+  }
+
+  const lowerKeys = Object.keys(node).map(k => k.toLowerCase());
+  for (let i = 0; i < lowerKeys.length; i++) {
+    const lower = lowerKeys[i];
+    const key = Object.keys(node)[i];
+    if (lower.includes("christian") || lower.includes("religion") || lower.includes("religions")) {
+      const value = node[key];
+      if (typeof value === "number") return value;
+      if (typeof value === "string") {
+        const num = parseFloat(value.replace(/%/g, ""));
+        if (Number.isFinite(num)) return num;
+      }
+      if (value && typeof value === "object") {
+        const direct = value.percent ?? value.percentage ?? value.share ?? value.value ?? value.total;
+        const parsed = typeof direct === "number" ? direct : parseFloat(String(direct).replace(/%/g, ""));
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+  }
+
+  for (const value of Object.values(node)) {
+    const result = extractChristianPercent(value);
+    if (result != null) return result;
+  }
+  return null;
+}
+
+async function loadChristianPercentages() {
+  const factbookUrl = "https://raw.githubusercontent.com/iancoleman/cia_world_factbook_api/master/data/factbook.json";
+  const json = await getJSON(factbookUrl, "CIA World Factbook religion data");
+  if (!json) return {};
+
+  const list = Array.isArray(json)
+    ? json
+    : Array.isArray(json?.countries)
+      ? json.countries
+      : Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json?.records)
+          ? json.records
+          : [];
+
+  const map = {};
+  for (const item of list) {
+    const iso3 = normalizeIso3(
+      item?.iso3 ||
+      item?.country_iso3 ||
+      item?.country?.iso3 ||
+      item?.countryCode ||
+      item?.country_code ||
+      item?.code ||
+      item?.id ||
+      ""
+    );
+    if (!iso3) continue;
+
+    const percent = extractChristianPercent(item);
+    if (percent != null && percent >= 0 && percent <= 100) {
+      map[iso3] = percent;
+    }
+  }
+
+  log(`CIA World Factbook loaded ${Object.keys(map).length} country Christian-percentage matches`, Object.keys(map).length ? "ok" : "bad");
+  return map;
 }
 
 function normalizeHapiCountryItem(item) {
@@ -473,7 +550,7 @@ function render() {
           <strong>${esc(r.source || "Not available")}</strong>
         </div>
         <div class="muted">Christian presence
-          <strong class="christian">${esc(r.christianLabel)}</strong>
+          <strong class="christian">${esc(r.christianLabel)}${r.christianPercent != null ? ` · ${r.christianPercent.toFixed(1)}% Christian` : ""}</strong>
         </div>
         <div class="muted">Evidence
           <strong>${esc(r.christianEvidence)}</strong>
@@ -492,9 +569,16 @@ async function refresh() {
   status("Loading global crisis watchlist…", "wait");
   log("Dashboard JavaScript is running", "ok");
 
+  state.christianPercentByIso3 = await loadChristianPercentages();
+
   const watchlist = await fetchGlobalCrisisWatchlist();
   state.crises = watchlist;
-  state.rows = state.crises.map(x => ({...x, peopleInNeed:x.peopleInNeed ?? null, live:Boolean(x.live)}));
+  state.rows = state.crises.map(x => ({
+    ...x,
+    peopleInNeed: x.peopleInNeed ?? null,
+    live: Boolean(x.live),
+    christianPercent: state.christianPercentByIso3[x.iso3] ?? null
+  }));
   state.rowById = new Map(state.rows.map(row => [row.id, row]));
   render();
   log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
