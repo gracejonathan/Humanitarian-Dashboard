@@ -83,46 +83,6 @@ function looksLikeInNeedMetric(value) {
     label.includes("pin");
 }
 
-function recursivelyCollectNumericCandidates(value, matches = []) {
-  if (value == null) return matches;
-
-  if (Array.isArray(value)) {
-    for (const item of value) recursivelyCollectNumericCandidates(item, matches);
-    return matches;
-  }
-
-  if (typeof value === "object") {
-    for (const [key, child] of Object.entries(value)) {
-      const normalized = String(key).toLowerCase();
-      if ([
-        "people_in_need",
-        "peopleinneed",
-        "people in need",
-        "people_needed",
-        "people_needed_total",
-        "in_need",
-        "inneed",
-        "pin",
-        "people_need",
-        "persons_in_need",
-        "affected",
-        "count",
-        "value",
-        "total"
-      ].includes(normalized)) {
-        const num = Number(child);
-        if (Number.isFinite(num) && num > 0) matches.push(num);
-      }
-      recursivelyCollectNumericCandidates(child, matches);
-    }
-    return matches;
-  }
-
-  const num = Number(value);
-  if (Number.isFinite(num) && num > 0) matches.push(num);
-  return matches;
-}
-
 async function loadChristianPercentages() {
   const fallback = { ...DEFAULT_CHRISTIAN_PERCENTAGES };
   try {
@@ -243,13 +203,34 @@ function extractPlans(json) {
 function extractPIN(json) {
   if (!json) return null;
 
+  // The plan endpoint now puts the overall PIN in the plan version's details,
+  // rather than in an attachment metric total. Check that canonical location
+  // first so that a sector or demographic subtotal cannot be reported as PIN.
+  const planDetails = [
+    json?.data?.plan?.planVersion?.value?.planDetails,
+    json?.data?.planVersion?.value?.planDetails,
+    json?.data?.plan?.version?.value?.planDetails,
+    json?.data?.plan?.planDetails,
+    json?.data?.planDetails,
+    ...[json?.data?.attachments, json?.attachments]
+      .filter(Array.isArray)
+      .flatMap(attachments => attachments.map(attachment => attachment?.attachmentVersion?.value?.planDetails))
+  ];
+
+  for (const details of planDetails) {
+    if (!details || typeof details !== "object") continue;
+    const value = details.peopleInNeed ?? details.people_in_need ?? details.pin;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return { value: numeric, description: "overall people in need" };
+    }
+  }
+
   const candidates = [];
 
   const addCandidate = (value, description = "") => {
     const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      candidates.push({ value: numeric, description: String(description || "") });
-    }
+    if (Number.isFinite(numeric) && numeric > 0) candidates.push({ value: numeric, description: String(description || "") });
   };
 
   const inspectNode = (node) => {
@@ -315,9 +296,6 @@ async function getOchaPIN(crisis, planId) {
   const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
   const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
   if (!json) return null;
-
-  const payloadPreview = JSON.stringify(json).slice(0, 1500);
-  log(`OCHA payload preview for ${crisis.name}: ${payloadPreview}`, "wait");
 
   const pin = extractPIN(json);
   if (pin) {
