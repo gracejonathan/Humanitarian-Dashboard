@@ -1,12 +1,4 @@
-const state = {
-  crises: [],
-  rows: [],
-  rowById: new Map(),
-  discoveredPlans: {},
-  liveCount: 0
-};
-
-const GLOBAL_CRISIS_SEED = [
+const FALLBACK_CRISIS_SEED = [
   {
     id: "sudan",
     name: "Sudan",
@@ -189,6 +181,14 @@ const GLOBAL_CRISIS_SEED = [
   }
 ];
 
+const state = {
+  crises: [],
+  rows: [],
+  rowById: new Map(),
+  discoveredPlans: {},
+  liveCount: 0
+};
+
 const $ = id => document.getElementById(id);
 const fmt = n => n == null ? "—" : new Intl.NumberFormat("en-US").format(Math.round(n));
 const compact = n => {
@@ -228,6 +228,114 @@ function log(message, type = "wait") {
 function status(text, type = "wait") {
   $("connectionStatus").textContent = text;
   $("connectionStatus").className = `status status-${type}`;
+}
+
+function normalizeIso3(value) {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function firstMeaningfulNumber(value) {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function findFirstValue(obj, keys) {
+  if (!obj || typeof obj !== "object") return null;
+  for (const key of keys) {
+    if (obj[key] != null && obj[key] !== "") return obj[key];
+  }
+  for (const value of Object.values(obj)) {
+    const found = findFirstValue(value, keys);
+    if (found != null) return found;
+  }
+  return null;
+}
+
+function normalizeHapiCountryItem(item) {
+  const iso3 = normalizeIso3(
+    item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
+  );
+  if (!iso3) return null;
+
+  const name = item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
+  const started = item?.start_date || item?.startDate || item?.started || item?.date || null;
+  const type = item?.crisis_type || item?.type || item?.category || "Humanitarian emergency";
+  const region = item?.region || item?.country_region || item?.country?.region || "Global";
+
+  return {
+    id: iso3.toLowerCase(),
+    iso3,
+    name: String(name),
+    region: String(region),
+    type: String(type),
+    started: started ? String(started) : null,
+    christianPresence: "documented",
+    christianLabel: "Current HAPI crisis source",
+    christianEvidence: "Live crisis source from OCHA HDX HAPI; source-backed until verified",
+    sourceLinks: [
+      ["HDX HAPI", "https://data.humdata.org/"],
+      ["ReliefWeb", `https://reliefweb.int/search?search=${encodeURIComponent(String(name))}`]
+    ]
+  };
+}
+
+async function fetchGlobalCrisisWatchlist() {
+  const crisisEndpoint = "https://api.humdata.org/api/3/action/hdx_crisisdata_list?active=True";
+  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises");
+  if (!crisisJson) return FALLBACK_CRISIS_SEED;
+
+  const rawList = Array.isArray(crisisJson)
+    ? crisisJson
+    : Array.isArray(crisisJson?.result)
+      ? crisisJson.result
+      : Array.isArray(crisisJson?.data)
+        ? crisisJson.data
+        : Array.isArray(crisisJson?.records)
+          ? crisisJson.records
+          : [];
+
+  const normalized = rawList
+    .map(item => normalizeHapiCountryItem(item))
+    .filter(Boolean)
+    .slice(0, 12);
+
+  if (!normalized.length) return FALLBACK_CRISIS_SEED;
+
+  const enriched = await Promise.all(normalized.map(async crisis => {
+    const countryEndpoint = `https://api.humdata.org/api/3/action/hdx_countrydata_show?iso3=${encodeURIComponent(crisis.iso3)}`;
+    const countryJson = await getJSON(countryEndpoint, `OCHA HDX HAPI country data · ${crisis.name}`);
+    const payload = Array.isArray(countryJson)
+      ? countryJson[0] || {}
+      : countryJson?.result || countryJson?.data || countryJson || {};
+
+    const metricCandidates = [
+      "people_in_need",
+      "in_need",
+      "people_in_need_total",
+      "number_of_people_in_need",
+      "population",
+      "affected",
+      "total_people",
+      "value"
+    ];
+
+    const numericValue = firstMeaningfulNumber(findFirstValue(payload, metricCandidates));
+    if (numericValue != null) {
+      crisis.peopleInNeed = numericValue;
+      crisis.source = `HDX HAPI · ${crisis.iso3}`;
+      crisis.live = true;
+    }
+
+    const dataDate = findFirstValue(payload, ["date", "data_date", "updated_at", "date_of_data", "last_updated"]);
+    if (dataDate) {
+      crisis.dataDate = String(dataDate);
+    }
+
+    return crisis;
+  }));
+
+  return enriched.filter(item => item && item.iso3);
 }
 
 async function getJSON(url, label) {
@@ -384,8 +492,10 @@ async function refresh() {
   status("Loading global crisis watchlist…", "wait");
   log("Dashboard JavaScript is running", "ok");
 
-  state.crises = GLOBAL_CRISIS_SEED.map(x => ({...x, peopleInNeed:null, live:false}));
-  state.rowById = new Map(state.crises.map(row => [row.id, row]));
+  const watchlist = await fetchGlobalCrisisWatchlist();
+  state.crises = watchlist;
+  state.rows = state.crises.map(x => ({...x, peopleInNeed:x.peopleInNeed ?? null, live:Boolean(x.live)}));
+  state.rowById = new Map(state.rows.map(row => [row.id, row]));
   render();
   log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
 
@@ -395,10 +505,7 @@ async function refresh() {
   const liveResults = await Promise.all(
     state.crises.map(async crisis => {
       const planId = state.discoveredPlans[crisis.iso3];
-      if (!planId) {
-        log(`${crisis.name}: no current OCHA plan discovered; retaining source links`, "wait");
-        return null;
-      }
+      if (!planId) return null;
 
       const pin = await getOchaPIN(crisis, planId);
       if (!pin) return null;
