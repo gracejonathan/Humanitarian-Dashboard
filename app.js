@@ -75,11 +75,15 @@ function extractPlans(json) {
   
   const plans = Array.isArray(raw) ? raw : [];
   
-  // Log first entry structure
+  // Dump FULL structure of first entry to understand schema
   if (plans.length > 0) {
     const first = plans[0];
-    log(`DEBUG: first entry structure: ${JSON.stringify(first).slice(0, 500)}`, "wait");
-    log(`DEBUG: first entry keys: ${Object.keys(first || {}).join(", ")}`, "wait");
+    const dumpStr = JSON.stringify(first);
+    // Split into chunks to avoid log line length limits
+    for (let i = 0; i < dumpStr.length; i += 400) {
+      log(`FIRST_ENTRY_DUMP[${i}]: ${dumpStr.slice(i, i + 400)}`, "wait");
+    }
+    log(`FIRST_ENTRY_KEYS: ${Object.keys(first || {}).join(" | ")}`, "wait");
   }
   
   const map = {};
@@ -101,10 +105,6 @@ function extractPlans(json) {
     
     const iso = String(isoAttempts.find(v => v) || "").toUpperCase();
     const id = x?.id || x?.planId || x?.plan_id || p?.id;
-    
-    if (iso || id) {
-      log(`DEBUG: plan entry - iso=${iso || "none"}, id=${id || "none"}`, "wait");
-    }
     
     if (iso && id) map[iso] = id;
   }
