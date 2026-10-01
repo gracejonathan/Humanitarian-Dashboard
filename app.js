@@ -40,6 +40,7 @@ function log(message, type = "wait") {
   div.textContent = `[${now}] ${icon} ${message}`;
   $("connectionLog").appendChild(div);
   $("connectionLog").scrollTop = $("connectionLog").scrollHeight;
+  console.log(`[${now}] ${message}`);
 }
 
 function status(text, type = "wait") {
@@ -56,6 +57,7 @@ async function getJSON(url, label) {
     if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
     const json = await response.json();
     log(`${label} responded successfully`, "ok");
+    console.log("Raw payload from", url, json);
     return json;
   } catch (e) {
     log(`${label} failed: ${e.name === "AbortError" ? "10-second timeout" : e.message}`, "bad");
@@ -65,36 +67,15 @@ async function getJSON(url, label) {
   }
 }
 
-function summarizeOchaPayload(json) {
-  if (!json) return "no payload";
-
-  const top = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || json);
-  const list = Array.isArray(top) ? top : [];
-  const first = list[0] ?? json;
-
-  const keyHints = [];
-  const collect = value => {
-    if (!value || typeof value !== "object") return;
-    Object.keys(value).forEach(key => {
-      if (["iso3","iso3Code","countryCode","country","countryId","id","planId","status","type","name","year"].includes(key)) {
-        keyHints.push(key);
-      }
-      if (typeof value[key] === "object") collect(value[key]);
-    });
-  };
-  collect(json);
-
-  const snippet = JSON.stringify(first ?? json)
-    .replace(/\s+/g, " ")
-    .slice(0, 220);
-
-  return `keys=${Object.keys(json).slice(0,8).join(",") || "n/a"}; itemCount=${list.length}; sample=${snippet}${snippet.length >= 220 ? "…" : ""}; hints=${[...new Set(keyHints)].slice(0, 10).join(",") || "n/a"}`;
-}
-
 function extractPlans(json) {
+  log(`DEBUG: extractPlans called with keys: ${Object.keys(json || {}).join(", ")}`, "wait");
+  
   const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
+  log(`DEBUG: extracted raw array length: ${Array.isArray(raw) ? raw.length : "not array"}`, "wait");
+  
   const plans = Array.isArray(raw) ? raw : [];
   const map = {};
+  
   for (const p of plans) {
     const x = p?.plan || p;
     const iso = String(
@@ -102,8 +83,15 @@ function extractPlans(json) {
       x?.operation?.iso3 || x?.iso3 || ""
     ).toUpperCase();
     const id = x?.id || x?.planId || x?.plan_id;
+    
+    if (iso || id) {
+      log(`DEBUG: plan entry - iso=${iso || "none"}, id=${id || "none"}`, "wait");
+    }
+    
     if (iso && id) map[iso] = id;
   }
+  
+  log(`DEBUG: extracted ${Object.keys(map).length} mapped plans: ${Object.keys(map).join(", ")}`, "wait");
   return map;
 }
 
@@ -124,42 +112,13 @@ function extractPIN(json) {
   return candidates[0] || null;
 }
 
-async function inspectOchaResponse(url, label) {
-  const json = await getJSON(url, label);
-  if (!json) return null;
-
-  log(`${label} payload summary: ${summarizeOchaPayload(json)}`, "wait");
-
-  const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
-  const plans = Array.isArray(raw) ? raw : [];
-  if (!plans.length) {
-    log(`${label} did not include any obvious plan entries; likely schema mismatch`, "bad");
-    return json;
-  }
-
-  const first = plans[0];
-  const countryPath = first?.country || first?.plan?.country || first?.operation || {};
-  const isoCandidates = [
-    countryPath.iso3,
-    countryPath.iso3Code,
-    countryPath.countryCode,
-    first?.iso3,
-    first?.countryCode,
-    first?.country?.iso3,
-    first?.plan?.country?.iso3
-  ].filter(Boolean);
-
-  log(`${label} example country ids: ${isoCandidates.slice(0, 6).join(", ") || "none"}`, "wait");
-  return json;
-}
-
 async function discoverOchaPlans() {
   const endpoints = [
     "https://api.hpc.tools/v2/public/plan",
     "https://api.hpc.tools/v2/public/plan?status=active"
   ];
   for (const url of endpoints) {
-    const json = await inspectOchaResponse(url, "OCHA Humanitarian Programme Cycle plan API");
+    const json = await getJSON(url, "OCHA Humanitarian Programme Cycle plan API");
     if (!json) continue;
     const plans = extractPlans(json);
     log(`OCHA returned ${Object.keys(plans).length} usable country-plan mappings`,
@@ -178,7 +137,6 @@ async function getOchaPIN(crisis, planId) {
     log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
   } else {
     log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
-    log(`${crisis.name} PIN payload: ${JSON.stringify(json).slice(0, 250)}...`, "wait");
   }
   return pin;
 }
