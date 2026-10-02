@@ -1,449 +1,1608 @@
-const FALLBACK_CRISIS_SEED = [
-  { id: "sudan", name: "Sudan", iso3: "SDN", region: "East Africa", type: "Conflict / displacement", started: "2023-04-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "afghanistan", name: "Afghanistan", iso3: "AFG", region: "South Asia", type: "Protracted crisis", started: "1978-04-27", christianPresence: "limited", christianLabel: "Small / limited presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "syria", name: "Syria", iso3: "SYR", region: "Middle East", type: "Conflict / displacement", started: "2011-03-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "drc", name: "Democratic Republic of the Congo", iso3: "COD", region: "Central Africa", type: "Conflict / displacement", started: "1996-10-24", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "ukraine", name: "Ukraine", iso3: "UKR", region: "Europe", type: "International armed conflict", started: "2022-02-24", christianPresence: "documented", christianLabel: "Established Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "yemen", name: "Yemen", iso3: "YEM", region: "Middle East", type: "Conflict / food insecurity", started: "2014-09-21", christianPresence: "limited", christianLabel: "Very small / restricted presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "palestine", name: "Occupied Palestinian Territory", iso3: "PSE", region: "Middle East", type: "Conflict / humanitarian emergency", started: "2023-10-07", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "myanmar", name: "Myanmar", iso3: "MMR", region: "Southeast Asia", type: "Conflict / displacement", started: "2021-02-01", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "somalia", name: "Somalia", iso3: "SOM", region: "Horn of Africa", type: "Drought / displacement / conflict", started: "2011-01-01", christianPresence: "documented", christianLabel: "Small documented community", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "ethiopia", name: "Ethiopia", iso3: "ETH", region: "East Africa", type: "Conflict / drought / displacement", started: "2020-11-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "nigeria", name: "Nigeria", iso3: "NGA", region: "West Africa", type: "Conflict / displacement", started: "2009-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
-  { id: "haiti", name: "Haiti", iso3: "HTI", region: "Caribbean", type: "Complex emergency / insecurity", started: "2020-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" }
-];
+/*
+ * ============================================================
+ * GLOBAL HUMANITARIAN CRISIS DASHBOARD
+ * ============================================================
+ *
+ * DATA SOURCE
+ * -----------
+ * HDX Humanitarian API (HAPI)
+ *
+ * DATASET
+ * -------
+ * People in Need (PIN)
+ *
+ * ENDPOINT
+ * --------
+ * /api/v1/affected-people/humanitarian-needs
+ *
+ * FILTERS
+ * -------
+ * sector_name       = Intersectoral
+ * population_status = INN
+ * admin_level       = 0
+ * category          = ""
+ *
+ * DISPLAY
+ * -------
+ * - Top 12 countries initially
+ * - "Load more" reveals another 12
+ * - Latest reference period per country
+ * - Sorted by PIN, descending
+ *
+ * ============================================================
+ */
 
-const DEFAULT_CHRISTIAN_PERCENTAGES = {
-  AFG: 0.3,
-  COD: 95.0,
-  ETH: 62.8,
-  HTI: 80.0,
-  MMR: 6.2,
-  NGA: 46.8,
-  PSE: 1.8,
-  SDN: 5.2,
-  SOM: 3.0,
-  SYR: 10.0,
-  UKR: 77.0,
-  YEM: 1.0
-};
 
-// HDX HAPI app identifier (base64 encoded)
-const HDX_HAPI_APP_ID = 'SHVtYW5pdGFyaWFuIERhc2hib2FyZDpqd2lsc29uQG9wc2FmZWludGwuY29t';
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
 
-const state = {
-  crises: [],
-  rows: [],
-  rowById: new Map(),
-  discoveredPlans: {},
-  liveCount: 0,
-  christianPercentByIso3: { ...DEFAULT_CHRISTIAN_PERCENTAGES }
-};
+const HDX_HAPI_APP_ID =
+  'SHVtYW5pdGFyaWFuIERhc2hib2FyZDpqd2lsc29uQG9wc2FmZWludGwuY29t';
 
-const $ = id => document.getElementById(id);
-const fmt = n => n == null ? "—" : new Intl.NumberFormat("en-US").format(Math.round(n));
-const compact = n => {
-  if (n == null) return "—";
-  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + "K";
-  return fmt(n);
-};
-const dateFormatter = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
-const formatDate = value => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
-};
-const esc = s => String(s ?? "").replace(/[&<>\"']/g, m => ({
-  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-}[m]));
+const HAPI_BASE =
+  'https://hapi.humdata.org/api/v1';
 
-function log(message, type = "wait") {
-  const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const icon = type === "ok" ? "✓" : type === "bad" ? "✕" : "…";
-  const div = document.createElement("div");
-  div.className = `log-line log-${type}`;
-  div.textContent = `[${now}] ${icon} ${message}`;
-  $("connectionLog").appendChild(div);
-  $("connectionLog").scrollTop = $("connectionLog").scrollHeight;
+const PIN_ENDPOINT =
+  `${HAPI_BASE}/affected-people/humanitarian-needs`;
+
+const PAGE_SIZE = 1000;
+
+const INITIAL_DISPLAY_COUNT = 12;
+
+const LOAD_MORE_COUNT = 12;
+
+const REQUEST_TIMEOUT_MS = 30000;
+
+
+/*
+ * How frequently to refresh the HAPI data.
+ *
+ * Six hours is appropriate for a dashboard whose source
+ * data may change less frequently than the webpage itself.
+ */
+
+const REFRESH_INTERVAL_MS =
+  6 * 60 * 60 * 1000;
+
+
+/* ============================================================
+   APPLICATION STATE
+   ============================================================ */
+
+let allPINCountries = [];
+
+let visibleCount =
+  INITIAL_DISPLAY_COUNT;
+
+let lastSuccessfulFetch =
+  null;
+
+let isLoading =
+  false;
+
+
+/* ============================================================
+   BASIC HELPERS
+   ============================================================ */
+
+function $(id) {
+  return document.getElementById(id);
 }
 
-function status(text, type = "wait") {
-  $("connectionStatus").textContent = text;
-  $("connectionStatus").className = `status status-${type}`;
+
+/*
+ * Safely escape text before inserting it into HTML.
+ */
+
+function escapeHtml(value) {
+
+  return String(value ?? '')
+    .replace(
+      /[&<>"']/g,
+      character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      })[character]
+    );
 }
 
-function normalizeIso3(value) {
-  return String(value ?? "").trim().toUpperCase();
-}
 
-function looksLikeInNeedMetric(value) {
-  const label = String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  return label.includes("inneed") ||
-    label.includes("peopleinneed") ||
-    label.includes("personsinneed") ||
-    label.includes("peopleneed") ||
-    label.includes("pin");
-}
+/* ============================================================
+   NUMBER FORMATTING
+   ============================================================ */
 
-async function loadChristianPercentages() {
-  const fallback = { ...DEFAULT_CHRISTIAN_PERCENTAGES };
-  try {
-    const response = await fetch("data/christian-percentages.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    const items = Array.isArray(payload) ? payload : payload?.countries || payload?.data || payload?.records || [];
-    const map = { ...fallback };
+function toNumber(value) {
 
-    for (const item of items) {
-      const iso3 = normalizeIso3(item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.code || item?.countryCode || "");
-      if (!iso3) continue;
-      const value = Number(item?.christian_percent ?? item?.christianPercent ?? item?.percent ?? item?.value ?? item?.estimate ?? item?.percentage);
-      if (Number.isFinite(value) && value >= 0 && value <= 100) {
-        map[iso3] = value;
-      }
-    }
-
-    log(`Christian share dataset loaded with ${Object.keys(map).length} country estimates`, "ok");
-    return map;
-  } catch (error) {
-    log(`Christian percentage dataset unavailable; using versioned fallback estimates`, "bad");
-    return fallback;
-  }
-}
-
-function normalizeHapiCountryItem(item) {
-  const iso3 = normalizeIso3(
-    item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
-  );
-  if (!iso3) return null;
-
-  const name = item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
-  const started = item?.start_date || item?.startDate || item?.started || item?.date || null;
-  const type = item?.crisis_type || item?.type || item?.category || "Humanitarian emergency";
-  const region = item?.region || item?.country_region || item?.country?.region || "Global";
-
-  return {
-    id: iso3.toLowerCase(),
-    iso3,
-    name: String(name),
-    region: String(region),
-    type: String(type),
-    started: started ? String(started) : null,
-    christianPresence: "documented",
-    christianLabel: "Current OCHA crisis source",
-    christianEvidence: "Live crisis source from OCHA HDX HAPI; source-backed until verified",
-    sourceLinks: [["HDX HAPI", "https://hapi.humdata.org/docs"], ["ReliefWeb", `https://reliefweb.int/search?search=${encodeURIComponent(String(name))}`]]
-  };
-}
-
-async function getJSON(url, label) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-  try {
-    log(`Connecting to ${label}`);
-    const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    const json = await response.json();
-    log(`${label} responded successfully`, "ok");
-    return json;
-  } catch (error) {
-    log(`${label} failed: ${error.name === "AbortError" ? "10-second timeout" : error.message}`, "bad");
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
     return null;
-  } finally {
-    clearTimeout(timeout);
+  }
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
+
+
+function formatNumber(value) {
+
+  const number =
+    toNumber(value);
+
+  if (number === null)
+    return '—';
+
+  return new Intl.NumberFormat(
+    'en-US'
+  ).format(
+    Math.round(number)
+  );
+}
+
+
+function formatCompact(value) {
+
+  const number =
+    toNumber(value);
+
+  if (number === null)
+    return '—';
+
+  if (number >= 1000000000) {
+
+    return (
+      (number / 1000000000)
+        .toFixed(1)
+        .replace(/\.0$/, '') +
+      'B'
+    );
+  }
+
+  if (number >= 1000000) {
+
+    return (
+      (number / 1000000)
+        .toFixed(1)
+        .replace(/\.0$/, '') +
+      'M'
+    );
+  }
+
+  if (number >= 1000) {
+
+    return (
+      (number / 1000)
+        .toFixed(1)
+        .replace(/\.0$/, '') +
+      'K'
+    );
+  }
+
+  return formatNumber(number);
+}
+
+
+/* ============================================================
+   DATE FORMATTING
+ * ============================================================ */
+
+function formatDate(value) {
+
+  if (!value)
+    return '—';
+
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return String(value);
+  }
+
+  return date.toLocaleDateString(
+    undefined,
+    {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }
+  );
+}
+
+
+function formatDateRange(
+  start,
+  end
+) {
+
+  if (!start && !end)
+    return '—';
+
+  if (
+    start &&
+    end
+  ) {
+
+    const startDate =
+      formatDate(start);
+
+    const endDate =
+      formatDate(end);
+
+    return `${startDate} – ${endDate}`;
+  }
+
+  return formatDate(
+    start || end
+  );
+}
+
+
+/* ============================================================
+   STATUS / DIAGNOSTICS
+   ============================================================ */
+
+function setStatus(
+  message,
+  live = false
+) {
+
+  const status =
+    $('status');
+
+  if (status) {
+
+    status.textContent =
+      message;
+  }
+
+
+  const dot =
+    $('dot');
+
+  if (dot) {
+
+    dot.classList.toggle(
+      'live',
+      live
+    );
   }
 }
 
-async function fetchGlobalCrisisWatchlistFromHDXHAPI() {
-  // Query HDX HAPI humanitarian-needs endpoint with app identifier
-  const url = `https://hapi.humdata.org/api/v2/affected-people/humanitarian-needs?app_identifier=${encodeURIComponent(HDX_HAPI_APP_ID)}&admin_level=0&limit=10000`;
-  const json = await getJSON(url, "OCHA HDX HAPI humanitarian needs");
-  if (!json) return FALLBACK_CRISIS_SEED;
 
-  // HDX HAPI returns {data: [...]} structure
-  const records = Array.isArray(json?.data) ? json.data : [];
-  if (!records.length) return FALLBACK_CRISIS_SEED;
+function setLoading(
+  loading
+) {
 
-  // Aggregate by country (location_code = ISO3)
-  const byCountry = new Map();
-  records.forEach(record => {
-    const iso3 = (record.location_code || "").toUpperCase();
-    if (!iso3 || iso3.length !== 3) return;
+  isLoading =
+    loading;
 
-    if (!byCountry.has(iso3)) {
-      byCountry.set(iso3, {
-        iso3,
-        locationName: record.location_name || iso3,
-        sectors: new Set(),
-        totalPopulation: 0
-      });
-    }
 
-    const entry = byCountry.get(iso3);
-    if (record.sector_name) {
-      entry.sectors.add(record.sector_name);
-    }
-    entry.totalPopulation += record.population || 0;
-  });
+  const loadMore =
+    $('loadMore');
 
-  // Convert to crisis objects
-  const crises = Array.from(byCountry.values()).map(country => ({
-    id: country.iso3.toLowerCase(),
-    iso3: country.iso3,
-    name: country.locationName || country.iso3,
-    region: "Global",
-    type: Array.from(country.sectors).slice(0, 2).join(" / ") || "Humanitarian needs",
-    started: null,
-    christianPresence: "documented",
-    christianLabel: "OCHA HDX HAPI live source",
-    christianEvidence: `Live humanitarian needs data: ${country.totalPopulation.toLocaleString()} people in need`,
-    sourceLinks: [["HDX HAPI", "https://hapi.humdata.org/docs"], ["ReliefWeb", "https://reliefweb.int"]]
-  })).filter(c => c.iso3 && c.iso3 !== "UNK");
+  if (loadMore) {
 
-  return crises.length ? crises : FALLBACK_CRISIS_SEED;
-}
+    loadMore.disabled =
+      loading;
 
-function extractPlans(json) {
-  const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
-  const plans = Array.isArray(raw) ? raw : [];
-  const map = {};
+    if (loading) {
 
-  for (const p of plans) {
-    const id = p?.id || p?.planId || p?.plan_id;
-    if (!id) continue;
+      loadMore.textContent =
+        'Loading…';
 
-    const isoCandidates = [
-      p?.iso3,
-      p?.country?.iso3,
-      p?.country?.iso3Code,
-      p?.countryCode,
-      p?.country?.code,
-      p?.operation?.iso3,
-      p?.locations?.[0]?.iso3,
-      p?.locations?.[0]?.refCode,
-      p?.locations?.[0]?.code,
-      p?.locations?.[0]?.pcode
-    ].filter(Boolean);
+    } else {
 
-    const iso = String(isoCandidates[0] || "").toUpperCase();
-    if (iso) map[iso] = id;
-  }
-
-  return map;
-}
-
-function extractPIN(json) {
-  if (!json) return null;
-
-  // The plan endpoint now puts the overall PIN in the plan version's details,
-  // rather than in an attachment metric total. Check that canonical location
-  // first so that a sector or demographic subtotal cannot be reported as PIN.
-  const planDetails = [
-    json?.data?.plan?.planVersion?.value?.planDetails,
-    json?.data?.planVersion?.value?.planDetails,
-    json?.data?.plan?.version?.value?.planDetails,
-    json?.data?.plan?.planDetails,
-    json?.data?.planDetails,
-    ...[json?.data?.attachments, json?.attachments]
-      .filter(Array.isArray)
-      .flatMap(attachments => attachments.map(attachment => attachment?.attachmentVersion?.value?.planDetails))
-  ];
-
-  for (const details of planDetails) {
-    if (!details || typeof details !== "object") continue;
-    const value = details.peopleInNeed ?? details.people_in_need ?? details.pin;
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      return { value: numeric, description: "overall people in need" };
+      loadMore.textContent =
+        'Load more';
     }
   }
+}
 
-  const candidates = [];
 
-  const addCandidate = (value, description = "") => {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) candidates.push({ value: numeric, description: String(description || "") });
-  };
+function clearDiagnostics() {
 
-  const inspectNode = (node) => {
-    if (!node || typeof node !== "object") return;
+  const log =
+    $('diagLog');
 
-    if (Array.isArray(node)) {
-      for (const item of node) inspectNode(item);
-      return;
-    }
+  if (log) {
 
-    const label = String(node?.type ?? node?.name ?? node?.metricType ?? node?.valueType ?? "");
-    if (looksLikeInNeedMetric(label)) {
-      addCandidate(node?.value ?? node?.amount ?? node?.total ?? node?.count ?? node?.number, node?.description || label);
-    }
+    log.innerHTML =
+      '';
+  }
+}
 
-    for (const child of Object.values(node)) {
-      if (child && typeof child === "object") inspectNode(child);
-    }
-  };
 
-  const attachmentGroups = [
-    json?.data?.attachments,
-    json?.attachments,
-    json?.data?.value?.attachments,
-    json?.data?.plan?.attachments
-  ].filter(Array.isArray).flat();
+function diagnostic(
+  message,
+  state = 'wait'
+) {
 
-  for (const attachment of attachmentGroups) {
-    const totals = attachment?.attachmentVersion?.value?.metrics?.values?.totals;
-    if (Array.isArray(totals)) {
-      for (const total of totals) {
-        const label = String(total?.type ?? total?.name ?? total?.metricType ?? "");
-        if (looksLikeInNeedMetric(label)) {
-          addCandidate(total?.value ?? total?.amount ?? total?.total ?? total?.count ?? total?.number, total?.description || label);
+  const log =
+    $('diagLog');
+
+  if (!log)
+    return;
+
+
+  const time =
+    new Date()
+      .toLocaleTimeString(
+        [],
+        {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
         }
-      }
-    }
-    inspectNode(attachment);
-  }
+      );
 
-  if (!candidates.length) {
-    inspectNode(json);
-  }
 
-  if (!candidates.length) return null;
+  const symbol =
+    state === 'ok'
+      ? '✓'
+      : state === 'bad'
+        ? '✕'
+        : '…';
 
-  candidates.sort((a, b) => b.value - a.value);
-  return candidates[0];
-}
 
-async function discoverOchaPlans() {
-  const endpoints = ["https://api.hpc.tools/v2/public/plan", "https://api.hpc.tools/v2/public/plan?status=active"];
-  for (const url of endpoints) {
-    const json = await getJSON(url, "OCHA Humanitarian Programme Cycle plan API");
-    if (!json) continue;
-    const plans = extractPlans(json);
-    if (Object.keys(plans).length) return plans;
-  }
-  return {};
-}
+  const className =
+    state === 'ok'
+      ? 'ok'
+      : state === 'bad'
+        ? 'bad'
+        : 'wait';
 
-async function getOchaPIN(crisis, planId) {
-  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
-  const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
-  if (!json) return null;
 
-  const pin = extractPIN(json);
-  if (pin) {
-    log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
-  } else {
-    log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
-  }
-  return pin;
-}
+  log.insertAdjacentHTML(
+    'beforeend',
+    `
+      <div class="diagline">
 
-function render() {
-  const q = $("search").value.toLowerCase();
-  const p = $("presence").value;
-  const sort = $("sort").value;
+        <span class="diagtime">
+          ${escapeHtml(time)}
+        </span>
 
-  let rows = state.rows.filter(r => {
-    const matchesText = `${r.name} ${r.region} ${r.type}`.toLowerCase().includes(q);
-    const matchesPresence = !p || r.christianPresence === p;
-    return matchesText && matchesPresence;
-  });
+        <span class="${className}">
+          ${symbol}
+        </span>
 
-  rows.sort((a, b) => {
-    if (sort === "name") return a.name.localeCompare(b.name);
-    if (sort === "start") return new Date(a.started) - new Date(b.started);
-    return (b.peopleInNeed ?? -1) - (a.peopleInNeed ?? -1);
-  });
+        <span>
+          ${escapeHtml(message)}
+        </span>
 
-  const total = state.rows.reduce((sum, r) => sum + (r.peopleInNeed || 0), 0);
-  $("totalNeed").textContent = total ? compact(total) : "—";
-  $("recordCount").textContent = state.rows.length;
-  $("liveCount").textContent = state.liveCount;
-
-  $("crisisGrid").innerHTML = rows.length ? rows.map(r => `
-    <article class="card">
-      <div class="card-head">
-        <div>
-          <h3>${esc(r.name)}</h3>
-          <span class="tag">${esc(r.type)}</span>
-        </div>
-        <span class="tag">${r.live ? "LIVE" : "SOURCE-BACKED"}</span>
       </div>
-      <div class="need">${compact(r.peopleInNeed)}</div>
-      <div class="muted">${r.peopleInNeed != null ? "people in humanitarian need" : "current PIN unavailable"}</div>
-      <div class="meta">
-        <div class="muted">Crisis began <strong>${formatDate(r.started)}</strong></div>
-        <div class="muted">Humanitarian source <strong>${esc(r.source || "Not available")}</strong></div>
-        <div class="muted">Christian presence <strong class="christian">${esc(r.christianLabel)}${r.christianPercent != null ? ` · ${r.christianPercent.toFixed(1)}% Christian share` : ""}</strong></div>
-        <div class="muted">Evidence <strong>${esc(r.christianEvidence)}</strong></div>
-      </div>
-      <div class="sources">
-        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
-        ${r.sourceLinks.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])} ↗</a>`).join("")}
-      </div>
-    </article>
-  `).join("") : "<p>No matching crises.</p>";
+    `
+  );
 }
 
-async function refresh() {
-  $("connectionLog").innerHTML = "";
-  status("Loading global crisis watchlist…", "wait");
-  log("Dashboard JavaScript is running", "ok");
 
-  state.christianPercentByIso3 = await loadChristianPercentages();
+/* ============================================================
+   BUILD HAPI URL
+   ============================================================ */
 
-  // Try HDX HAPI first, fall back to old method if it fails
-  let watchlist = await fetchGlobalCrisisWatchlistFromHDXHAPI();
-  
-  state.crises = watchlist;
-  state.rows = state.crises.map(row => ({
-    ...row,
-    peopleInNeed: row.peopleInNeed ?? null,
-    live: Boolean(row.live),
-    christianPercent: state.christianPercentByIso3[normalizeIso3(row.iso3)] ?? null,
-    christianLabel: row.christianPercent != null ? "Documented Christian presence (estimated share)" : row.christianLabel || "Documented Christian presence"
-  }));
-  state.rowById = new Map(state.rows.map(row => [row.id, row]));
-  render();
-  log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
+function buildHAPIUrl(
+  offset = 0
+) {
 
-  status("Connecting to OCHA…", "wait");
-  state.discoveredPlans = await discoverOchaPlans();
+  const url =
+    new URL(
+      PIN_ENDPOINT
+    );
 
-  const liveResults = await Promise.all(
-    state.crises.map(async crisis => {
-      const planId = state.discoveredPlans[crisis.iso3];
-      if (!planId) return null;
 
-      const pin = await getOchaPIN(crisis, planId);
-      if (pin == null) return null;
-
-      const row = state.rowById.get(crisis.id);
-      if (!row) return null;
-
-      row.peopleInNeed = pin.value;
-      row.source = `OCHA HPC · ${pin.description || "current plan"}`;
-      row.planId = planId;
-      row.live = true;
-      return crisis.id;
-    })
+  url.searchParams.set(
+    'output_format',
+    'json'
   );
 
-  state.liveCount = liveResults.filter(Boolean).length;
-  render();
-  $("lastRefresh").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  if (state.liveCount) {
-    status(`Live OCHA connection succeeded · ${state.liveCount} crisis record(s) refreshed`, "ok");
-    log(`Refresh complete: ${state.liveCount} live OCHA record(s) loaded`, "ok");
-  } else {
-    status("OCHA connection did not return usable PIN data for the current global watchlist", "bad");
-    log("Refresh complete: no live OCHA PIN values were obtained for the current global watchlist. Source-backed records remain visible.", "bad");
+  url.searchParams.set(
+    'app_identifier',
+    HDX_HAPI_APP_ID
+  );
+
+
+  /*
+   * These are the exact filters verified against the
+   * live Afghanistan response supplied by the user.
+   */
+
+  url.searchParams.set(
+    'sector_name',
+    'Intersectoral'
+  );
+
+
+  url.searchParams.set(
+    'population_status',
+    'INN'
+  );
+
+
+  url.searchParams.set(
+    'admin_level',
+    '0'
+  );
+
+
+  url.searchParams.set(
+    'category',
+    ''
+  );
+
+
+  url.searchParams.set(
+    'offset',
+    String(offset)
+  );
+
+
+  url.searchParams.set(
+    'limit',
+    String(PAGE_SIZE)
+  );
+
+
+  return url;
+}
+
+
+/* ============================================================
+   FETCH ONE PAGE
+   ============================================================ */
+
+async function fetchHAPIPage(
+  offset
+) {
+
+  const url =
+    buildHAPIUrl(
+      offset
+    );
+
+
+  diagnostic(
+    `Requesting records ${offset + 1}–${
+      offset + PAGE_SIZE
+    }`
+  );
+
+
+  const controller =
+    new AbortController();
+
+
+  const timeout =
+    setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS
+    );
+
+
+  try {
+
+    const response =
+      await fetch(
+        url.toString(),
+        {
+          method: 'GET',
+
+          headers: {
+            Accept:
+              'application/json'
+          },
+
+          cache:
+            'no-store',
+
+          signal:
+            controller.signal
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        `HAPI returned HTTP ${
+          response.status
+        } ${
+          response.statusText
+        }`
+      );
+    }
+
+
+    const json =
+      await response.json();
+
+
+    if (
+      !json ||
+      !Array.isArray(
+        json.data
+      )
+    ) {
+
+      throw new Error(
+        'HAPI response did not contain a data array.'
+      );
+    }
+
+
+    diagnostic(
+      `Received ${
+        json.data.length
+      } records`,
+      'ok'
+    );
+
+
+    return json.data;
+
+
+  } catch (error) {
+
+    if (
+      error.name ===
+      'AbortError'
+    ) {
+
+      throw new Error(
+        'HAPI request timed out.'
+      );
+    }
+
+
+    throw error;
+
+
+  } finally {
+
+    clearTimeout(
+      timeout
+    );
   }
 }
 
-$("refreshBtn").addEventListener("click", refresh);
-["search", "presence", "sort"].forEach(id => $(id).addEventListener("input", () => render()));
-refresh();
-setInterval(refresh, 6 * 60 * 60 * 1000);
+
+/* ============================================================
+   FETCH ENTIRE GLOBAL DATASET
+   ============================================================ */
+
+async function fetchAllPINRecords() {
+
+  const allRecords =
+    [];
+
+  let offset =
+    0;
+
+
+  while (true) {
+
+    const page =
+      await fetchHAPIPage(
+        offset
+      );
+
+
+    allRecords.push(
+      ...page
+    );
+
+
+    /*
+     * A short page means that we have reached the end.
+     */
+
+    if (
+      page.length <
+      PAGE_SIZE
+    ) {
+
+      break;
+    }
+
+
+    offset +=
+      PAGE_SIZE;
+  }
+
+
+  diagnostic(
+    `Global HAPI dataset: ${
+      allRecords.length
+    } records`,
+    'ok'
+  );
+
+
+  return allRecords;
+}
+
+
+/* ============================================================
+   FILTER AND SELECT LATEST COUNTRY RECORD
+   ============================================================ */
+
+function selectLatestPIN(
+  records
+) {
+
+  const countries =
+    new Map();
+
+
+  for (
+    const row
+    of records
+  ) {
+
+
+    /*
+     * We deliberately enforce all four conditions here,
+     * even though they are also sent to the API.
+     *
+     * This protects the dashboard if HAPI returns additional
+     * records or changes pagination behavior.
+     */
+
+    if (
+      Number(
+        row.admin_level
+      ) !== 0
+    ) {
+      continue;
+    }
+
+
+    if (
+      row.sector_name !==
+      'Intersectoral'
+    ) {
+      continue;
+    }
+
+
+    if (
+      row.population_status !==
+      'INN'
+    ) {
+      continue;
+    }
+
+
+    /*
+     * The Afghanistan test showed that HAPI can return
+     * demographic categories such as "Adult" and
+     * "Adult - Female".
+     *
+     * We want the total PIN record only.
+     */
+
+    if (
+      row.category !== ''
+    ) {
+      continue;
+    }
+
+
+    const iso =
+      String(
+        row.location_code || ''
+      ).trim().toUpperCase();
+
+
+    if (!iso) {
+      continue;
+    }
+
+
+    const population =
+      toNumber(
+        row.population
+      );
+
+
+    if (
+      population === null
+    ) {
+      continue;
+    }
+
+
+    const existing =
+      countries.get(
+        iso
+      );
+
+
+    /*
+     * First record for this country.
+     */
+
+    if (!existing) {
+
+      countries.set(
+        iso,
+        row
+      );
+
+      continue;
+    }
+
+
+    /*
+     * If multiple reference periods exist, retain
+     * the newest one.
+     */
+
+    const existingDate =
+      new Date(
+        existing.reference_period_end ||
+        existing.reference_period_start ||
+        '1900-01-01'
+      );
+
+
+    const currentDate =
+      new Date(
+        row.reference_period_end ||
+        row.reference_period_start ||
+        '1900-01-01'
+      );
+
+
+    if (
+      currentDate >
+      existingDate
+    ) {
+
+      countries.set(
+        iso,
+        row
+      );
+    }
+  }
+
+
+  /*
+   * Convert Map → array and sort largest PIN first.
+   */
+
+  return [...countries.values()]
+    .sort(
+      (a, b) =>
+        Number(b.population) -
+        Number(a.population)
+    );
+}
+
+
+/* ============================================================
+   GLOBAL TOTAL
+   ============================================================ */
+
+function calculateGlobalPIN(
+  countries
+) {
+
+  return countries.reduce(
+    (
+      total,
+      row
+    ) => {
+
+      const value =
+        toNumber(
+          row.population
+        );
+
+      return total +
+        (
+          value === null
+            ? 0
+            : value
+        );
+    },
+
+    0
+  );
+}
+
+
+/* ============================================================
+   COUNTRY CARD
+   ============================================================ */
+
+function createCountryCard(
+  row,
+  rank
+) {
+
+  const name =
+    row.location_name ||
+    row.location_code;
+
+
+  const population =
+    toNumber(
+      row.population
+    );
+
+
+  const referencePeriod =
+    formatDateRange(
+      row.reference_period_start,
+      row.reference_period_end
+    );
+
+
+  /*
+   * The resource_hdx_id allows us to link the displayed
+   * number to its underlying HDX resource.
+   */
+
+  const resourceId =
+    row.resource_hdx_id ||
+    '';
+
+
+  const hdxResourceUrl =
+    resourceId
+      ? `https://data.humdata.org/dataset/${resourceId}`
+      : 'https://data.humdata.org/';
+
+
+  return `
+
+    <article
+      class="card pin-card"
+      data-iso="${escapeHtml(
+        row.location_code
+      )}"
+    >
+
+      <div class="rank">
+        ${rank}
+      </div>
+
+
+      <div class="country-main">
+
+        <div class="country-header">
+
+          <h2>
+            ${escapeHtml(name)}
+          </h2>
+
+          <span class="iso">
+            ${escapeHtml(
+              row.location_code
+            )}
+          </span>
+
+        </div>
+
+
+        <div class="pin-number">
+
+          ${formatCompact(
+            population
+          )}
+
+        </div>
+
+
+        <div class="pin-label">
+          people in need
+        </div>
+
+
+        <div class="pin-exact">
+
+          ${formatNumber(
+            population
+          )}
+
+        </div>
+
+
+        <div class="reference">
+
+          Reference period:
+          <strong>
+            ${escapeHtml(
+              referencePeriod
+            )}
+          </strong>
+
+        </div>
+
+
+        <div class="source">
+
+          <span>
+            Source: HDX HAPI / OCHA
+          </span>
+
+          <a
+            href="${hdxResourceUrl}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Dataset ↗
+          </a>
+
+        </div>
+
+      </div>
+
+    </article>
+  `;
+}
+
+
+/* ============================================================
+   RENDER COUNTRY LIST
+   ============================================================ */
+
+function renderPIN() {
+
+  const grid =
+    $('grid');
+
+
+  if (!grid)
+    return;
+
+
+  const visible =
+    allPINCountries.slice(
+      0,
+      visibleCount
+    );
+
+
+  grid.innerHTML =
+    visible
+      .map(
+        (row, index) =>
+          createCountryCard(
+            row,
+            index + 1
+          )
+      )
+      .join('');
+
+
+  /*
+   * Load More button
+   */
+
+  const loadMore =
+    $('loadMore');
+
+
+  if (loadMore) {
+
+    const remaining =
+      allPINCountries.length -
+      visibleCount;
+
+
+    if (
+      remaining > 0
+    ) {
+
+      loadMore.style.display =
+        'block';
+
+      loadMore.disabled =
+        false;
+
+      loadMore.textContent =
+        `Load more · ${
+          Math.min(
+            LOAD_MORE_COUNT,
+            remaining
+          )
+        } more countries`;
+
+    } else {
+
+      loadMore.style.display =
+        'none';
+    }
+  }
+
+
+  /*
+   * Number of countries shown.
+   */
+
+  const showing =
+    $('showing');
+
+
+  if (showing) {
+
+    showing.textContent =
+      `Showing ${
+        Math.min(
+          visibleCount,
+          allPINCountries.length
+        )
+      } of ${
+        allPINCountries.length
+      } countries`;
+  }
+}
+
+
+/* ============================================================
+   LOAD MORE
+   ============================================================ */
+
+function loadMorePIN() {
+
+  if (isLoading)
+    return;
+
+
+  visibleCount +=
+    LOAD_MORE_COUNT;
+
+
+  renderPIN();
+
+
+  /*
+   * Put keyboard focus back on the button when it remains
+   * visible. This makes the interaction more accessible.
+   */
+
+  const loadMore =
+    $('loadMore');
+
+
+  if (
+    loadMore &&
+    loadMore.style.display !==
+    'none'
+  ) {
+
+    loadMore.focus();
+  }
+}
+
+
+/* ============================================================
+   UPDATE DASHBOARD SUMMARY
+   ============================================================ */
+
+function updateSummary() {
+
+  const globalPIN =
+    calculateGlobalPIN(
+      allPINCountries
+    );
+
+
+  const total =
+    $('total');
+
+
+  if (total) {
+
+    total.textContent =
+      formatCompact(
+        globalPIN
+      );
+  }
+
+
+  const recordCount =
+    $('recordCount');
+
+
+  if (recordCount) {
+
+    recordCount.textContent =
+      allPINCountries.length
+    ;
+  }
+
+
+  const liveCount =
+    $('liveCount');
+
+
+  if (liveCount) {
+
+    liveCount.textContent =
+      allPINCountries.length
+    ;
+  }
+
+
+  const refresh =
+    $('refresh');
+
+
+  if (refresh) {
+
+    refresh.textContent =
+      lastSuccessfulFetch
+        ? lastSuccessfulFetch
+            .toLocaleString()
+        : '—';
+  }
+}
+
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+
+function searchCountries() {
+
+  const search =
+    $('search');
+
+
+  if (!search)
+    return;
+
+
+  const query =
+    search.value
+      .trim()
+      .toLowerCase();
+
+
+  if (!query) {
+
+    visibleCount =
+      INITIAL_DISPLAY_COUNT;
+
+    renderPIN();
+
+    return;
+  }
+
+
+  const matches =
+    allPINCountries.filter(
+      row => {
+
+        const name =
+          String(
+            row.location_name ||
+            ''
+          ).toLowerCase();
+
+
+        const iso =
+          String(
+            row.location_code ||
+            ''
+          ).toLowerCase();
+
+
+        return (
+          name.includes(query) ||
+          iso.includes(query)
+        );
+      }
+    );
+
+
+  const grid =
+    $('grid');
+
+
+  if (!grid)
+    return;
+
+
+  grid.innerHTML =
+    matches
+      .map(
+        (row, index) =>
+          createCountryCard(
+            row,
+            index + 1
+          )
+      )
+      .join('');
+
+
+  const loadMore =
+    $('loadMore');
+
+
+  if (loadMore) {
+
+    loadMore.style.display =
+      'none';
+  }
+
+
+  const showing =
+    $('showing');
+
+
+  if (showing) {
+
+    showing.textContent =
+      `Showing ${
+        matches.length
+      } matching countries`;
+  }
+}
+
+
+/* ============================================================
+   CLEAR SEARCH
+   ============================================================ */
+
+function clearSearch() {
+
+  const search =
+    $('search');
+
+
+  if (search) {
+
+    search.value =
+      '';
+  }
+
+
+  visibleCount =
+    INITIAL_DISPLAY_COUNT;
+
+
+  renderPIN();
+}
+
+
+/* ============================================================
+   FULL DATA REFRESH
+   ============================================================ */
+
+async function refreshDashboard() {
+
+  if (isLoading)
+    return;
+
+
+  isLoading =
+    true;
+
+
+  clearDiagnostics();
+
+
+  setStatus(
+    'Loading global PIN data…',
+    false
+  );
+
+
+  diagnostic(
+    'GLOBAL HAPI PIN REFRESH'
+  );
+
+
+  diagnostic(
+    'Endpoint: humanitarian-needs'
+  );
+
+
+  diagnostic(
+    'Filters: Intersectoral / INN / admin level 0'
+  );
+
+
+  try {
+
+    const records =
+      await fetchAllPINRecords();
+
+
+    diagnostic(
+      'Selecting latest total PIN record for each country…'
+    );
+
+
+    const countries =
+      selectLatestPIN(
+        records
+      );
+
+
+    if (
+      countries.length === 0
+    ) {
+
+      throw new Error(
+        'HAPI returned records, but no country-level total PIN records matched the dashboard filters.'
+      );
+    }
+
+
+    allPINCountries =
+      countries;
+
+
+    visibleCount =
+      INITIAL_DISPLAY_COUNT;
+
+
+    lastSuccessfulFetch =
+      new Date();
+
+
+    updateSummary();
+
+
+    renderPIN();
+
+
+    setStatus(
+      `LIVE · HAPI · ${
+        allPINCountries.length
+      } countries`,
+      true
+    );
+
+
+    diagnostic(
+      `Selected ${
+        allPINCountries.length
+      } countries`,
+      'ok'
+    );
+
+
+    diagnostic(
+      `Largest PIN: ${
+        allPINCountries[0]
+          ?.location_name ||
+        '—'
+      } · ${
+        formatNumber(
+          allPINCountries[0]
+            ?.population
+        )
+      }`,
+      'ok'
+    );
+
+
+    diagnostic(
+      'Global PIN dashboard successfully refreshed',
+      'ok'
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'HAPI PIN refresh failed:',
+      error
+    );
+
+
+    setStatus(
+      'HAPI unavailable · live PIN data unavailable',
+      false
+    );
+
+
+    diagnostic(
+      `ERROR: ${error.message}`,
+      'bad'
+    );
+
+
+    /*
+     * Do not silently display old or fabricated numbers.
+     */
+
+    const grid =
+      $('grid');
+
+
+    if (grid) {
+
+      grid.innerHTML = `
+
+        <div class="error-state">
+
+          <h2>
+            Live humanitarian data unavailable
+          </h2>
+
+          <p>
+            The dashboard could not retrieve
+            current People in Need data from
+            HDX HAPI.
+          </p>
+
+          <p>
+            Please try again.
+          </p>
+
+        </div>
+      `;
+    }
+
+
+    const loadMore =
+      $('loadMore');
+
+
+    if (loadMore) {
+
+      loadMore.style.display =
+        'none';
+    }
+
+
+  } finally {
+
+    isLoading =
+      false;
+  }
+}
+
+
+/* ============================================================
+   EVENT HANDLERS
+   ============================================================ */
+
+
+/*
+ * Load More
+ */
+
+const loadMoreButton =
+  $('loadMore');
+
+
+if (loadMoreButton) {
+
+  loadMoreButton.addEventListener(
+    'click',
+    loadMorePIN
+  );
+}
+
+
+/*
+ * Search
+ */
+
+const searchInput =
+  $('search');
+
+
+if (searchInput) {
+
+  searchInput.addEventListener(
+    'input',
+    searchCountries
+  );
+}
+
+
+/*
+ * Clear search
+ */
+
+const clearSearchButton =
+  $('clearSearch');
+
+
+if (clearSearchButton) {
+
+  clearSearchButton.addEventListener(
+    'click',
+    clearSearch
+  );
+}
+
+
+/*
+ * Manual refresh
+ */
+
+const refreshButton =
+  $('refreshButton');
+
+
+if (refreshButton) {
+
+  refreshButton.addEventListener(
+    'click',
+    refreshDashboard
+  );
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+setStatus(
+  'Connecting to HDX HAPI…',
+  false
+);
+
+
+diagnostic(
+  'Dashboard initialized',
+  'ok'
+);
+
+
+diagnostic(
+  'HAPI app identifier configured',
+  HDX_HAPI_APP_ID
+    ? 'ok'
+    : 'bad'
+);
+
+
+/*
+ * First live load.
+ */
+
+refreshDashboard();
+
+
+/*
+ * Automatic refresh.
+ */
+
+setInterval(
+  refreshDashboard,
+  REFRESH_INTERVAL_MS
+);
+
+
+/* ============================================================
+   EXPOSE LOAD MORE FOR EXISTING HTML
+   ============================================================
+ *
+ * If the existing HTML uses:
+ *
+ *   onclick="loadMorePIN()"
+ *
+ * this keeps that markup working.
+ *
+ * ============================================================ */
+
+window.loadMorePIN =
+  loadMorePIN;
+
+
+window.refreshDashboard =
+  refreshDashboard;
