@@ -1,0 +1,36 @@
+name: Update Crisis Watchlist
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  update-crises:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Fetch crisis data from ReliefWeb API
+        run: |
+          node .github/scripts/fetch-crises.js
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          if git diff --quiet data/crises.json; then
+            echo "No changes to crisis data."
+          else
+            git add data/crises.json
+            git commit -m "chore: update crisis watchlist from ReliefWeb API"
+            git push
+          fi
