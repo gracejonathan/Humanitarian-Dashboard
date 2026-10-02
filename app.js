@@ -7,24 +7,23 @@
  * ---------
  * HDX Humanitarian API (HAPI)
  *
- * PRIMARY INDICATOR
- * -----------------
+ * DATASET
+ * -------
  * People in Need (PIN)
  *
- * SUPPORTING DATA
+ * ADDITIONAL DATA
  * ---------------
  * data/religion.json
- *   World Religion Database
- *
  * data/crises.json
- *   Curated crisis chronology and Christian-presence context
  *
  * DISPLAY
  * -------
- * - 12 countries initially
+ * - Top 12 countries initially
  * - Load more reveals another 12
  * - Latest PIN reference period per country
- * - Sorted by PIN descending by default
+ * - Christian population percentage
+ * - Curated Christian presence
+ * - Crisis start date
  *
  * ============================================================
  */
@@ -37,38 +36,16 @@
 const HDX_HAPI_APP_ID =
   'SHVtYW5pdGFyaWFuIERhc2hib2FyZDpqd2lsc29uQG9wc2FmZWludGwuY29t';
 
-
-const HAPI_BASE =
-  'https://hapi.humdata.org/api/v1';
-
-
 const PIN_ENDPOINT =
-  `${HAPI_BASE}/affected-people/humanitarian-needs`;
+  'https://hapi.humdata.org/api/v1/affected-people/humanitarian-needs';
 
+const PAGE_SIZE = 1000;
 
-const RELIGION_URL =
-  'data/religion.json';
+const INITIAL_DISPLAY_COUNT = 12;
 
+const LOAD_MORE_COUNT = 12;
 
-const CRISIS_URL =
-  'data/crises.json';
-
-
-const PAGE_SIZE =
-  1000;
-
-
-const INITIAL_DISPLAY_COUNT =
-  12;
-
-
-const LOAD_MORE_COUNT =
-  12;
-
-
-const REQUEST_TIMEOUT_MS =
-  30000;
-
+const REQUEST_TIMEOUT_MS = 30000;
 
 const REFRESH_INTERVAL_MS =
   6 * 60 * 60 * 1000;
@@ -80,20 +57,20 @@ const REFRESH_INTERVAL_MS =
 
 let allPINCountries = [];
 
-let filteredCountries = [];
-
-let religionData = [];
-
-let crisisData = [];
-
 let visibleCount =
   INITIAL_DISPLAY_COUNT;
 
-let lastSuccessfulFetch =
-  null;
+let religionMap =
+  new Map();
+
+let crisisMap =
+  new Map();
 
 let isLoading =
   false;
+
+let lastSuccessfulFetch =
+  null;
 
 
 /* ============================================================
@@ -101,17 +78,15 @@ let isLoading =
    ============================================================ */
 
 function $(id) {
-
   return document.getElementById(id);
-
 }
 
 
 /* ============================================================
-   HTML ESCAPING
+   SAFE HTML
    ============================================================ */
 
-function escapeHtml(value) {
+function esc(value) {
 
   return String(value ?? '')
     .replace(
@@ -124,7 +99,6 @@ function escapeHtml(value) {
         "'": '&#039;'
       })[character]
     );
-
 }
 
 
@@ -132,98 +106,79 @@ function escapeHtml(value) {
    NUMBER HELPERS
    ============================================================ */
 
-function toNumber(value) {
+function num(value) {
 
   if (
     value === null ||
     value === undefined ||
     value === ''
   ) {
-
     return null;
-
   }
 
-  const number =
+  const n =
     Number(value);
 
-  return Number.isFinite(number)
-    ? number
+  return Number.isFinite(n)
+    ? n
     : null;
-
 }
 
 
-function formatNumber(value) {
+function fmt(value) {
 
-  const number =
-    toNumber(value);
+  const n =
+    num(value);
 
-  if (number === null) {
-
+  if (n === null) {
     return '—';
-
   }
 
   return new Intl.NumberFormat(
     'en-US'
   ).format(
-    Math.round(number)
+    Math.round(n)
   );
-
 }
 
 
-function formatCompact(value) {
+function compact(value) {
 
-  const number =
-    toNumber(value);
+  const n =
+    num(value);
 
-  if (number === null) {
-
+  if (n === null) {
     return '—';
-
   }
 
-
-  if (number >= 1000000000) {
-
+  if (n >= 1000000000) {
     return (
-      (number / 1000000000)
+      (n / 1000000000)
         .toFixed(1)
         .replace(/\.0$/, '') +
       'B'
     );
-
   }
 
-
-  if (number >= 1000000) {
-
+  if (n >= 1000000) {
     return (
-      (number / 1000000)
+      (n / 1000000)
         .toFixed(1)
         .replace(/\.0$/, '') +
       'M'
     );
-
   }
 
-
-  if (number >= 1000) {
-
+  if (n >= 1000) {
     return (
-      (number / 1000)
+      (n / 1000)
         .toFixed(1)
         .replace(/\.0$/, '') +
       'K'
     );
-
   }
 
-
-  return formatNumber(number);
-
+  return fmt(n);
 }
 
 
@@ -231,38 +186,24 @@ function formatCompact(value) {
    DATE HELPERS
    ============================================================ */
 
-function parseDate(value) {
+function date(value) {
 
   if (!value) {
-
-    return null;
-
+    return '—';
   }
 
-  const date =
+  const d =
     new Date(value);
 
-  return Number.isNaN(
-    date.getTime()
-  )
-    ? null
-    : date;
-
-}
-
-
-function formatDate(value) {
-
-  const date =
-    parseDate(value);
-
-  if (!date) {
-
-    return '—';
-
+  if (
+    Number.isNaN(
+      d.getTime()
+    )
+  ) {
+    return String(value);
   }
 
-  return date.toLocaleDateString(
+  return d.toLocaleDateString(
     undefined,
     {
       year: 'numeric',
@@ -270,35 +211,6 @@ function formatDate(value) {
       day: 'numeric'
     }
   );
-
-}
-
-
-function formatDateRange(
-  start,
-  end
-) {
-
-  if (!start && !end) {
-
-    return '—';
-
-  }
-
-
-  if (start && end) {
-
-    return (
-      `${formatDate(start)} – ${formatDate(end)}`
-    );
-
-  }
-
-
-  return formatDate(
-    start || end
-  );
-
 }
 
 
@@ -311,28 +223,24 @@ function setStatus(
   live = false
 ) {
 
-  const element =
-    $('connectionStatus');
+  const status =
+    $('status');
 
-  if (!element) {
+  const dot =
+    $('dot');
 
-    return;
-
+  if (status) {
+    status.textContent =
+      message;
   }
 
-  element.textContent =
-    message;
+  if (dot) {
 
-  element.classList.toggle(
-    'status-live',
-    live
-  );
-
-  element.classList.toggle(
-    'status-wait',
-    !live
-  );
-
+    dot.classList.toggle(
+      'live',
+      live
+    );
+  }
 }
 
 
@@ -340,35 +248,17 @@ function setStatus(
    DIAGNOSTIC LOG
    ============================================================ */
 
-function clearDiagnostics() {
-
-  const log =
-    $('connectionLog');
-
-  if (log) {
-
-    log.innerHTML =
-      '';
-
-  }
-
-}
-
-
-function diagnostic(
+function diag(
   message,
   state = 'wait'
 ) {
 
   const log =
-    $('connectionLog');
+    $('diagLog');
 
   if (!log) {
-
     return;
-
   }
-
 
   const time =
     new Date()
@@ -381,14 +271,12 @@ function diagnostic(
         }
       );
 
-
   const symbol =
     state === 'ok'
       ? '✓'
       : state === 'bad'
         ? '✕'
         : '…';
-
 
   const className =
     state === 'ok'
@@ -397,14 +285,12 @@ function diagnostic(
         ? 'bad'
         : 'wait';
 
-
   log.insertAdjacentHTML(
     'beforeend',
     `
       <div class="diagline">
-
         <span class="diagtime">
-          ${escapeHtml(time)}
+          ${esc(time)}
         </span>
 
         <span class="${className}">
@@ -412,127 +298,49 @@ function diagnostic(
         </span>
 
         <span>
-          ${escapeHtml(message)}
+          ${esc(message)}
         </span>
-
       </div>
     `
   );
+}
 
+
+function clearDiag() {
+
+  const log =
+    $('diagLog');
+
+  if (log) {
+    log.innerHTML =
+      '';
+  }
 }
 
 
 /* ============================================================
-   BUILD HAPI URL
+   GENERIC JSON FETCH
    ============================================================ */
 
-function buildHAPIUrl(
-  offset = 0
+async function fetchJSON(
+  url,
+  timeout = REQUEST_TIMEOUT_MS
 ) {
-
-  const url =
-    new URL(
-      PIN_ENDPOINT
-    );
-
-
-  url.searchParams.set(
-    'output_format',
-    'json'
-  );
-
-
-  url.searchParams.set(
-    'app_identifier',
-    HDX_HAPI_APP_ID
-  );
-
-
-  /*
-   * Country-level total intersectoral PIN.
-   */
-
-  url.searchParams.set(
-    'sector_name',
-    'Intersectoral'
-  );
-
-
-  url.searchParams.set(
-    'population_status',
-    'INN'
-  );
-
-
-  url.searchParams.set(
-    'admin_level',
-    '0'
-  );
-
-
-  /*
-   * Empty category = total population,
-   * not demographic subsets.
-   */
-
-  url.searchParams.set(
-    'category',
-    ''
-  );
-
-
-  url.searchParams.set(
-    'offset',
-    String(offset)
-  );
-
-
-  url.searchParams.set(
-    'limit',
-    String(PAGE_SIZE)
-  );
-
-
-  return url;
-
-}
-
-
-/* ============================================================
-   FETCH ONE HAPI PAGE
-   ============================================================ */
-
-async function fetchHAPIPage(
-  offset
-) {
-
-  const url =
-    buildHAPIUrl(
-      offset
-    );
-
-
-  diagnostic(
-    `Requesting records ${offset + 1}–${offset + PAGE_SIZE}`
-  );
-
 
   const controller =
     new AbortController();
 
-
-  const timeout =
+  const timer =
     setTimeout(
       () => controller.abort(),
-      REQUEST_TIMEOUT_MS
+      timeout
     );
-
 
   try {
 
     const response =
       await fetch(
-        url.toString(),
+        url,
         {
           method: 'GET',
 
@@ -549,313 +357,226 @@ async function fetchHAPIPage(
         }
       );
 
-
     if (!response.ok) {
 
       throw new Error(
-        `HAPI returned HTTP ${response.status} ${response.statusText}`
+        `HTTP ${response.status} ${response.statusText}`
       );
-
     }
 
+    return await response.json();
 
-    const json =
-      await response.json();
-
+  } catch (error) {
 
     if (
-      !json ||
+      error.name ===
+      'AbortError'
+    ) {
+
+      throw new Error(
+        'Request timed out'
+      );
+    }
+
+    throw error;
+
+  } finally {
+
+    clearTimeout(
+      timer
+    );
+  }
+}
+
+
+/* ============================================================
+   HAPI URL
+   ============================================================ */
+
+function buildPINUrl(
+  offset = 0
+) {
+
+  const url =
+    new URL(
+      PIN_ENDPOINT
+    );
+
+  url.searchParams.set(
+    'output_format',
+    'json'
+  );
+
+  url.searchParams.set(
+    'app_identifier',
+    HDX_HAPI_APP_ID
+  );
+
+  url.searchParams.set(
+    'sector_name',
+    'Intersectoral'
+  );
+
+  url.searchParams.set(
+    'population_status',
+    'INN'
+  );
+
+  url.searchParams.set(
+    'admin_level',
+    '0'
+  );
+
+  url.searchParams.set(
+    'category',
+    ''
+  );
+
+  url.searchParams.set(
+    'offset',
+    String(offset)
+  );
+
+  url.searchParams.set(
+    'limit',
+    String(PAGE_SIZE)
+  );
+
+  return url;
+}
+
+
+/* ============================================================
+   FETCH ALL HAPI PIN DATA
+   ============================================================ */
+
+async function fetchAllPIN() {
+
+  const records =
+    [];
+
+  for (
+    let offset = 0;
+    ;
+    offset += PAGE_SIZE
+  ) {
+
+    diag(
+      `Requesting records ${offset + 1}–${offset + PAGE_SIZE}`
+    );
+
+    const response =
+      await fetchJSON(
+        buildPINUrl(
+          offset
+        ).toString()
+      );
+
+    if (
+      !response ||
       !Array.isArray(
-        json.data
+        response.data
       )
     ) {
 
       throw new Error(
         'HAPI response did not contain a data array.'
       );
-
     }
 
+    records.push(
+      ...response.data
+    );
 
-    diagnostic(
-      `Received ${json.data.length} records`,
+    diag(
+      `Received ${response.data.length} records`,
       'ok'
     );
 
-
-    return json.data;
-
-  } finally {
-
-    clearTimeout(
-      timeout
-    );
-
-  }
-
-}
-
-
-/* ============================================================
-   FETCH ALL HAPI RECORDS
-   ============================================================ */
-
-async function fetchAllPINRecords() {
-
-  const allRecords =
-    [];
-
-  let offset =
-    0;
-
-
-  while (true) {
-
-    const page =
-      await fetchHAPIPage(
-        offset
-      );
-
-
-    allRecords.push(
-      ...page
-    );
-
-
     if (
-      page.length <
+      response.data.length <
       PAGE_SIZE
     ) {
-
       break;
-
     }
-
-
-    offset +=
-      PAGE_SIZE;
-
   }
 
-
-  diagnostic(
-    `Global HAPI dataset: ${allRecords.length} records`,
-    'ok'
-  );
-
-
-  return allRecords;
-
+  return records;
 }
 
 
 /* ============================================================
-   LOAD LOCAL JSON FILES
+   SELECT LATEST TOTAL PIN PER COUNTRY
    ============================================================ */
 
-async function loadSupportingData() {
-
-  diagnostic(
-    'Loading country religion data…'
-  );
-
-
-  diagnostic(
-    'Loading crisis context data…'
-  );
-
-
-  const [
-    religionResponse,
-    crisisResponse
-  ] = await Promise.all([
-    fetch(
-      RELIGION_URL,
-      {
-        cache: 'no-store'
-      }
-    ),
-    fetch(
-      CRISIS_URL,
-      {
-        cache: 'no-store'
-      }
-    )
-  ]);
-
-
-  if (!religionResponse.ok) {
-
-    throw new Error(
-      `Could not load ${RELIGION_URL} (HTTP ${religionResponse.status})`
-    );
-
-  }
-
-
-  if (!crisisResponse.ok) {
-
-    throw new Error(
-      `Could not load ${CRISIS_URL} (HTTP ${crisisResponse.status})`
-    );
-
-  }
-
-
-  const religionJson =
-    await religionResponse.json();
-
-
-  const crisisJson =
-    await crisisResponse.json();
-
-
-  /*
-   * religion.json is expected to be an array.
-   */
-
-  religionData =
-    Array.isArray(
-      religionJson
-    )
-      ? religionJson
-      : (
-          Array.isArray(
-            religionJson.data
-          )
-            ? religionJson.data
-            : []
-        );
-
-
-  /*
-   * crises.json is expected to be an array.
-   */
-
-  crisisData =
-    Array.isArray(
-      crisisJson
-    )
-      ? crisisJson
-      : (
-          Array.isArray(
-            crisisJson.data
-          )
-            ? crisisJson.data
-            : []
-        );
-
-
-  diagnostic(
-    `Religion data: ${religionData.length} countries`,
-    'ok'
-  );
-
-
-  diagnostic(
-    `Crisis context: ${crisisData.length} records`,
-    'ok'
-  );
-
-}
-
-
-/* ============================================================
-   SELECT LATEST PIN RECORD PER COUNTRY
-   ============================================================ */
-
-function selectLatestPIN(
+function latestPIN(
   records
 ) {
 
   const countries =
     new Map();
 
-
   for (
-    const row of records
+    const row
+    of records
   ) {
-
 
     if (
       Number(
         row.admin_level
       ) !== 0
     ) {
-
       continue;
-
     }
-
 
     if (
       row.sector_name !==
       'Intersectoral'
     ) {
-
       continue;
-
     }
-
 
     if (
       row.population_status !==
       'INN'
     ) {
-
       continue;
-
     }
 
-
     /*
-     * Exclude demographic categories.
+     * Exclude demographic subsets.
+     * We want the total PIN record.
      */
 
     if (
       row.category !== ''
     ) {
-
       continue;
-
     }
-
 
     const iso =
       String(
         row.location_code || ''
       )
-      .trim()
-      .toUpperCase();
-
-
-    if (!iso) {
-
-      continue;
-
-    }
-
+        .trim()
+        .toUpperCase();
 
     const population =
-      toNumber(
+      num(
         row.population
       );
 
-
     if (
+      !iso ||
       population === null
     ) {
-
       continue;
-
     }
-
 
     const existing =
       countries.get(
         iso
       );
-
 
     if (!existing) {
 
@@ -865,210 +586,240 @@ function selectLatestPIN(
       );
 
       continue;
-
     }
 
-
     const existingDate =
-      parseDate(
+      new Date(
         existing.reference_period_end ||
-        existing.reference_period_start
+        existing.reference_period_start ||
+        '1900-01-01'
       );
-
 
     const currentDate =
-      parseDate(
+      new Date(
         row.reference_period_end ||
-        row.reference_period_start
+        row.reference_period_start ||
+        '1900-01-01'
       );
 
-
     if (
-      currentDate &&
-      (
-        !existingDate ||
-        currentDate > existingDate
-      )
+      currentDate >
+      existingDate
     ) {
 
       countries.set(
         iso,
         row
       );
-
     }
-
   }
 
-
-  return [...countries.values()]
-    .sort(
-      (a, b) =>
-        Number(b.population) -
-        Number(a.population)
-    );
-
+  return [
+    ...countries.values()
+  ].sort(
+    (a, b) =>
+      num(b.population) -
+      num(a.population)
+  );
 }
 
 
 /* ============================================================
-   SUPPORTING DATA LOOKUPS
+   LOAD RELIGION DATA
    ============================================================ */
 
-function getReligion(
-  iso
-) {
+async function loadReligion() {
 
-  const code =
-    String(
-      iso || ''
-    )
-    .trim()
-    .toUpperCase();
+  try {
 
-
-  return religionData.find(
-    row =>
-      String(
-        row.iso3 || ''
-      )
-      .trim()
-      .toUpperCase() === code
-  ) || null;
-
-}
-
-
-function getCrisis(
-  iso
-) {
-
-  const code =
-    String(
-      iso || ''
-    )
-    .trim()
-    .toUpperCase();
-
-
-  return crisisData.find(
-    row =>
-      String(
-        row.iso3 || ''
-      )
-      .trim()
-      .toUpperCase() === code
-  ) || null;
-
-}
-
-
-/* ============================================================
-   GLOBAL PIN
-   ============================================================ */
-
-function calculateGlobalPIN(
-  countries
-) {
-
-  return countries.reduce(
-    (
-      total,
-      row
-    ) => {
-
-      const value =
-        toNumber(
-          row.population
-        );
-
-
-      return (
-        total +
-        (
-          value === null
-            ? 0
-            : value
-        )
+    const data =
+      await fetchJSON(
+        'data/religion.json',
+        10000
       );
 
-    },
-    0
-  );
+    let rows = [];
 
+    if (
+      Array.isArray(data)
+    ) {
+
+      rows =
+        data;
+
+    } else if (
+      Array.isArray(
+        data?.countries
+      )
+    ) {
+
+      rows =
+        data.countries;
+    }
+
+    religionMap =
+      new Map(
+        rows
+          .filter(
+            row =>
+              row &&
+              row.iso3
+          )
+          .map(
+            row => [
+              String(
+                row.iso3
+              )
+                .toUpperCase(),
+              row
+            ]
+          )
+      );
+
+    diag(
+      `World Religion Database: ${religionMap.size} country records loaded`,
+      'ok'
+    );
+
+  } catch (error) {
+
+    /*
+     * Religion data is supplementary.
+     * Do NOT allow it to break the live HAPI dashboard.
+     */
+
+    religionMap =
+      new Map();
+
+    diag(
+      `Christian population data unavailable: ${error.message}`,
+      'bad'
+    );
+  }
 }
 
 
 /* ============================================================
-   CHRISTIAN PRESENCE LABEL
+   LOAD CURATED CRISIS DATA
    ============================================================ */
 
-function getPresenceLabel(
-  crisis
+async function loadCrisisData() {
+
+  try {
+
+    const data =
+      await fetchJSON(
+        'data/crises.json',
+        10000
+      );
+
+    let rows = [];
+
+    if (
+      Array.isArray(data)
+    ) {
+
+      rows =
+        data;
+
+    } else if (
+      Array.isArray(
+        data?.crises
+      )
+    ) {
+
+      rows =
+        data.crises;
+    }
+
+    crisisMap =
+      new Map(
+        rows
+          .filter(
+            row =>
+              row &&
+              row.iso3
+          )
+          .map(
+            row => [
+              String(
+                row.iso3
+              )
+                .toUpperCase(),
+              row
+            ]
+          )
+      );
+
+    diag(
+      `Curated crisis layer: ${crisisMap.size} country records loaded`,
+      'ok'
+    );
+
+  } catch (error) {
+
+    crisisMap =
+      new Map();
+
+    diag(
+      'Curated crisis layer not loaded; countries without local metadata will show "Not yet assessed".',
+      'wait'
+    );
+  }
+}
+
+
+/* ============================================================
+   MERGE DATASETS
+   ============================================================ */
+
+function mergedRow(
+  row
 ) {
 
-  if (!crisis) {
+  const iso =
+    String(
+      row.location_code
+    )
+      .toUpperCase();
 
-    return {
-      label:
-        'Not yet researched',
-      className:
-        'unknown'
-    };
+  const religion =
+    religionMap.get(
+      iso
+    ) || {};
 
-  }
+  const crisis =
+    crisisMap.get(
+      iso
+    ) || {};
 
+  return {
+    ...row,
 
-  if (
-    crisis.christianLabel
-  ) {
+    ...crisis,
 
-    return {
-      label:
-        crisis.christianLabel,
-      className:
-        crisis.christianPresence ||
-        'unknown'
-    };
+    iso3:
+      iso,
 
-  }
+    location_name:
+      row.location_name ||
+      crisis.name ||
+      religion.name ||
+      iso,
 
+    christianPopulationPercent:
+      num(
+        religion.christianPopulationPercent
+      ),
 
-  switch (
-    crisis.christianPresence
-  ) {
+    religionSource:
+      religion.source ||
+      'World Religion Database',
 
-    case 'documented':
-
-      return {
-        label:
-          'Documented Christian presence',
-        className:
-          'documented'
-      };
-
-
-    case 'limited':
-
-      return {
-        label:
-          'Small / limited Christian presence',
-        className:
-          'limited'
-      };
-
-
-    default:
-
-      return {
-        label:
-          'Not yet researched',
-        className:
-          'unknown'
-      };
-
-  }
-
+    religionYear:
+      religion.year ||
+      null
+  };
 }
 
 
@@ -1076,766 +827,403 @@ function getPresenceLabel(
    COUNTRY CARD
    ============================================================ */
 
-function createCountryCard(
+function createCard(
   row,
   rank
 ) {
 
-  const iso =
-    String(
-      row.location_code || ''
-    )
-    .trim()
-    .toUpperCase();
+  const pct =
+    row.christianPopulationPercent === null
+      ? 'Not available'
+      : `${row.christianPopulationPercent}%`;
 
+  const christianPresence =
+    row.christianLabel ||
+    row.christianPresence ||
+    row.christian ||
+    'Not yet assessed';
 
-  const name =
-    row.location_name ||
-    iso;
-
-
-  const population =
-    toNumber(
-      row.population
-    );
-
-
-  const religion =
-    getReligion(
-      iso
-    );
-
-
-  const crisis =
-    getCrisis(
-      iso
-    );
-
-
-  const christianPercent =
-    religion
-      ? toNumber(
-          religion.christianPopulationPercent
-        )
-      : null;
-
-
-  const presence =
-    getPresenceLabel(
-      crisis
-    );
-
+  const crisisStart =
+    row.started
+      ? date(row.started)
+      : 'Not yet documented';
 
   const referencePeriod =
-    formatDateRange(
-      row.reference_period_start,
-      row.reference_period_end
-    );
+    `${date(row.reference_period_start)} – ${date(row.reference_period_end)}`;
 
+  const apiUrl =
+    buildPINUrl(0);
 
-  const resourceId =
-    row.resource_hdx_id ||
-    '';
+  apiUrl.searchParams.set(
+    'location_code',
+    row.iso3
+  );
 
+  apiUrl.searchParams.delete(
+    'offset'
+  );
 
-  /*
-   * HAPI's resource_hdx_id is an HDX resource identifier.
-   * Use the HAPI resource metadata URL when possible.
-   */
-
-  const hdxResourceUrl =
-    resourceId
-      ? `https://data.humdata.org/dataset/${encodeURIComponent(resourceId)}`
-      : 'https://data.humdata.org/';
-
-
-  const crisisStarted =
-    crisis
-      ? formatDate(
-          crisis.started
-        )
-      : 'Not yet researched';
-
-
-  const crisisType =
-    crisis
-      ? crisis.type ||
-        'Humanitarian crisis'
-      : 'Not yet researched';
-
-
-  const christianSourceYear =
-    religion
-      ? religion.year || ''
-      : '';
-
-
-  const christianSource =
-    religion
-      ? religion.source ||
-        'World Religion Database'
-      : '';
-
+  apiUrl.searchParams.delete(
+    'limit'
+  );
 
   return `
-
-    <article
-      class="card pin-card"
-      data-iso="${escapeHtml(iso)}"
-    >
+    <article class="card">
 
       <div class="rank">
         ${rank}
       </div>
 
+      <div class="head">
 
-      <div class="country-main">
+        <div>
 
+          <h2>
+            ${esc(row.location_name)}
+          </h2>
 
-        <!-- COUNTRY HEADER -->
-
-        <div class="country-header">
-
-          <div>
-
-            <h2>
-              ${escapeHtml(name)}
-            </h2>
-
-            <span class="iso">
-              ${escapeHtml(iso)}
-            </span>
-
+          <div class="iso">
+            ${esc(row.iso3)}
           </div>
 
         </div>
 
+        <span class="tag">
+          Live PIN
+        </span>
 
-        <!-- PIN -->
+      </div>
 
-        <div class="metric-block">
+      <div class="need">
+        ${compact(row.population)}
+      </div>
 
-          <div class="metric-label">
-            PEOPLE IN NEED
-          </div>
+      <div class="muted">
+        people in need
+      </div>
 
-          <div class="pin-number">
-            ${formatCompact(population)}
-          </div>
+      <div class="exact">
+        ${fmt(row.population)}
+      </div>
 
-          <div class="pin-exact">
-            ${formatNumber(population)}
-          </div>
+      <div class="meta">
 
-        </div>
-
-
-        <!-- REFERENCE PERIOD -->
-
-        <div class="detail-row">
-
-          <span>
-            PIN reference period
-          </span>
+        <div class="muted">
+          PIN reference period
 
           <strong>
-            ${escapeHtml(referencePeriod)}
+            ${esc(referencePeriod)}
           </strong>
-
         </div>
 
+        <div class="muted">
+          Crisis began
 
-        <!-- CRISIS -->
-
-        <div class="detail-section">
-
-          <div class="detail-heading">
-            CRISIS CONTEXT
-          </div>
-
-          <div class="detail-row">
-
-            <span>
-              Type
-            </span>
-
-            <strong>
-              ${escapeHtml(crisisType)}
-            </strong>
-
-          </div>
-
-          <div class="detail-row">
-
-            <span>
-              Started
-            </span>
-
-            <strong>
-              ${escapeHtml(crisisStarted)}
-            </strong>
-
-          </div>
-
+          <strong>
+            ${esc(crisisStart)}
+          </strong>
         </div>
 
+        <div class="muted">
+          Christian population
 
-        <!-- CHRISTIAN POPULATION -->
-
-        <div class="detail-section christian-section">
-
-          <div class="detail-heading">
-            CHRISTIAN POPULATION
-          </div>
-
-          <div class="christian-stat">
-
-            <strong>
-              ${
-                christianPercent !== null
-                  ? christianPercent.toFixed(2) + '%'
-                  : '—'
-              }
-            </strong>
-
-            <span>
-              of population
-            </span>
-
-          </div>
-
-          ${
-            religion
-              ? `
-                <div class="source-note">
-                  ${escapeHtml(christianSource)}
-                  ${christianSourceYear
-                    ? ` · ${escapeHtml(christianSourceYear)}`
-                    : ''}
-                </div>
-              `
-              : `
-                <div class="source-note">
-                  No matching country record in religion.json
-                </div>
-              `
-          }
-
+          <strong class="christian">
+            ${esc(pct)}
+          </strong>
         </div>
 
+        <div class="muted">
+          Christian presence
 
-        <!-- CHRISTIAN PRESENCE -->
-
-        <div class="detail-section">
-
-          <div class="detail-heading">
-            CHRISTIAN PRESENCE
-          </div>
-
-          <div
-            class="presence ${escapeHtml(
-              presence.className
-            )}"
-          >
-            ${escapeHtml(
-              presence.label
-            )}
-          </div>
-
-          ${
-            crisis && crisis.christianEvidence
-              ? `
-                <div class="source-note">
-                  ${escapeHtml(
-                    crisis.christianEvidence
-                  )}
-                </div>
-              `
-              : ''
-          }
-
+          <strong class="christian">
+            ${esc(christianPresence)}
+          </strong>
         </div>
 
+      </div>
 
-        <!-- SOURCES -->
+      <div class="source-note">
 
-        <div class="source">
-
-          <span>
-            PIN: HDX HAPI / OCHA
-          </span>
-
-          <a
-            href="${hdxResourceUrl}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            HDX dataset ↗
-          </a>
-
-        </div>
-
+        ${esc(row.religionSource)}
 
         ${
-          crisis &&
-          Array.isArray(
-            crisis.sourceLinks
-          ) &&
-          crisis.sourceLinks.length
-            ? `
-              <div class="source-links">
-
-                ${
-                  crisis.sourceLinks
-                    .map(
-                      link => {
-
-                        if (
-                          !Array.isArray(
-                            link
-                          ) ||
-                          link.length < 2
-                        ) {
-
-                          return '';
-
-                        }
-
-                        return `
-                          <a
-                            href="${escapeHtml(link[1])}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            ${escapeHtml(link[0])} ↗
-                          </a>
-                        `;
-
-                      }
-                    )
-                    .join('')
-                }
-
-              </div>
-            `
+          row.religionYear
+            ? ` · ${esc(row.religionYear)}`
             : ''
         }
+
+        · demographic estimate
+
+      </div>
+
+      <div class="sources">
+
+        <a
+          href="${apiUrl.toString()}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          HAPI record ↗
+        </a>
+
+        <a
+          href="https://reliefweb.int/country/${row.iso3.toLowerCase()}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ReliefWeb ↗
+        </a>
+
+        <button
+          onclick="openDetail('${esc(row.iso3)}')"
+        >
+          Details
+        </button>
 
       </div>
 
     </article>
-
   `;
-
 }
 
 
 /* ============================================================
-   APPLY FILTERS AND SORT
+   FILTER + SORT + RENDER
    ============================================================ */
 
-function getFilteredCountries() {
+function render() {
 
-  const searchInput =
+  const search =
     $('search');
 
+  const christian =
+    $('christian');
 
-  const presenceSelect =
-    $('presence');
-
-
-  const sortSelect =
+  const sort =
     $('sort');
 
-
   const query =
-    searchInput
-      ? searchInput.value
+    search
+      ? search.value
           .trim()
           .toLowerCase()
       : '';
 
-
-  const presenceFilter =
-    presenceSelect
-      ? presenceSelect.value
+  const christianFilter =
+    christian
+      ? christian.value
       : '';
 
-
-  const sort =
-    sortSelect
-      ? sortSelect.value
+  const sortValue =
+    sort
+      ? sort.value
       : 'need';
 
 
-  let results =
-    [...allPINCountries];
+  let rows =
+    allPINCountries.filter(
+      row => {
 
-
-  /*
-   * SEARCH
-   */
-
-  if (query) {
-
-    results =
-      results.filter(
-        row => {
-
-          const iso =
-            String(
-              row.location_code || ''
-            )
+        const haystack =
+          `
+            ${row.location_name}
+            ${row.iso3}
+            ${row.type || ''}
+          `
             .toLowerCase();
 
+        const presence =
+          String(
+            row.christianPresence ||
+            ''
+          ).toLowerCase();
 
-          const name =
-            String(
-              row.location_name || ''
-            )
-            .toLowerCase();
-
-
-          return (
-            iso.includes(query) ||
-            name.includes(query)
+        const matchesSearch =
+          haystack.includes(
+            query
           );
 
-        }
-      );
+        let matchesChristian =
+          true;
 
-  }
+        if (
+          christianFilter ===
+          'documented'
+        ) {
+
+          matchesChristian =
+            presence ===
+            'documented';
+
+        } else if (
+          christianFilter ===
+          'limited'
+        ) {
+
+          matchesChristian =
+            presence ===
+            'limited';
+        }
+
+        return (
+          matchesSearch &&
+          matchesChristian
+        );
+      }
+    );
 
 
   /*
-   * CHRISTIAN PRESENCE
+   * Sorting
    */
 
-  if (presenceFilter) {
-
-    results =
-      results.filter(
-        row => {
-
-          const crisis =
-            getCrisis(
-              row.location_code
-            );
-
-
-          const value =
-            crisis
-              ? crisis.christianPresence
-              : 'unknown';
-
-
-          return (
-            value ===
-            presenceFilter
-          );
-
-        }
-      );
-
-  }
-
-
-  /*
-   * SORT
-   */
-
-  results.sort(
+  rows.sort(
     (a, b) => {
 
-      if (sort === 'name') {
-
-        return String(
-          a.location_name || ''
-        ).localeCompare(
-          String(
-            b.location_name || ''
-          )
-        );
-
-      }
-
-
-      if (sort === 'start') {
-
-        const crisisA =
-          getCrisis(
-            a.location_code
-          );
-
-
-        const crisisB =
-          getCrisis(
-            b.location_code
-          );
-
-
-        const dateA =
-          parseDate(
-            crisisA?.started
-          );
-
-
-        const dateB =
-          parseDate(
-            crisisB?.started
-          );
-
-
-        if (!dateA && !dateB)
-          return 0;
-
-
-        if (!dateA)
-          return 1;
-
-
-        if (!dateB)
-          return -1;
-
-
-        return (
-          dateA.getTime() -
-          dateB.getTime()
-        );
-
-      }
-
-
       if (
-        sort ===
-        'christian'
+        sortValue ===
+        'name'
       ) {
 
-        const religionA =
-          getReligion(
-            a.location_code
-          );
-
-
-        const religionB =
-          getReligion(
-            b.location_code
-          );
-
-
-        const percentA =
-          toNumber(
-            religionA?.christianPopulationPercent
-          ) ?? -1;
-
-
-        const percentB =
-          toNumber(
-            religionB?.christianPopulationPercent
-          ) ?? -1;
-
-
-        return (
-          percentB -
-          percentA
+        return String(
+          a.location_name
+        ).localeCompare(
+          String(
+            b.location_name
+          )
         );
-
       }
 
+      if (
+        sortValue ===
+        'start'
+      ) {
 
-      /*
-       * Default:
-       * PIN descending.
-       */
+        return (
+          new Date(
+            a.started ||
+            '9999-12-31'
+          ) -
+          new Date(
+            b.started ||
+            '9999-12-31'
+          )
+        );
+      }
 
       return (
-        Number(b.population) -
-        Number(a.population)
+        num(b.population) -
+        num(a.population)
       );
-
     }
   );
 
 
-  return results;
-
-}
-
-
-/* ============================================================
-   RENDER
-   ============================================================ */
-
-function renderPIN() {
-
-  const grid =
-    $('crisisGrid');
-
-
-  if (!grid) {
-
-    return;
-
-  }
-
-
-  filteredCountries =
-    getFilteredCountries();
-
-
   const visible =
-    filteredCountries.slice(
+    rows.slice(
       0,
       visibleCount
     );
 
 
-  if (
-    visible.length === 0
-  ) {
+  const grid =
+    $('grid');
 
-    grid.innerHTML = `
 
-      <div class="error-state">
-
-        <h2>
-          No countries found
-        </h2>
-
-        <p>
-          Try changing the search or filter.
-        </p>
-
-      </div>
-
-    `;
-
-  } else {
+  if (grid) {
 
     grid.innerHTML =
-      visible
-        .map(
-          (row, index) =>
-            createCountryCard(
-              row,
-              index + 1
+      visible.length
+        ? visible
+            .map(
+              (row, index) =>
+                createCard(
+                  row,
+                  index + 1
+                )
             )
-        )
-        .join('');
+            .join('')
 
+        : `
+          <div class="empty">
+
+            <h2>
+              No countries match.
+            </h2>
+
+            <p>
+              Try a different search or filter.
+            </p>
+
+          </div>
+        `;
   }
 
 
   /*
-   * SHOWING TEXT
+   * Load more
+   */
+
+  const remaining =
+    rows.length -
+    visibleCount;
+
+  const loadMore =
+    $('loadMore');
+
+  if (loadMore) {
+
+    loadMore.style.display =
+      remaining > 0
+        ? 'inline-flex'
+        : 'none';
+
+    if (
+      remaining > 0
+    ) {
+
+      loadMore.textContent =
+        `Load more · ${
+          Math.min(
+            LOAD_MORE_COUNT,
+            remaining
+          )
+        } more countries`;
+    }
+  }
+
+
+  /*
+   * Showing count
    */
 
   const showing =
     $('showing');
 
-
   if (showing) {
 
-    const showingCount =
-      Math.min(
-        visibleCount,
-        filteredCountries.length
-      );
-
-
     if (
-      searchValue() ||
-      presenceValue()
+      query ||
+      christianFilter
     ) {
 
       showing.textContent =
-        `Showing ${showingCount} of ${filteredCountries.length} matching countries`;
+        `Showing ${
+          visible.length
+        } of ${
+          rows.length
+        } matching countries`;
 
     } else {
 
       showing.textContent =
-        `Showing ${showingCount} of ${filteredCountries.length} countries`;
-
+        `Showing ${
+          visible.length
+        } of ${
+          allPINCountries.length
+        } countries`;
     }
-
   }
-
-
-  /*
-   * LOAD MORE
-   */
-
-  const loadMore =
-    $('loadMore');
-
-
-  if (!loadMore) {
-
-    return;
-
-  }
-
-
-  const remaining =
-    filteredCountries.length -
-    visibleCount;
-
-
-  if (
-    remaining > 0
-  ) {
-
-    loadMore.style.display =
-      'inline-block';
-
-
-    loadMore.disabled =
-      false;
-
-
-    loadMore.textContent =
-      `Load more · ${Math.min(
-        LOAD_MORE_COUNT,
-        remaining
-      )} more countries`;
-
-  } else {
-
-    loadMore.style.display =
-      'none';
-
-  }
-
-}
-
-
-/* ============================================================
-   FILTER VALUE HELPERS
-   ============================================================ */
-
-function searchValue() {
-
-  const input =
-    $('search');
-
-
-  return input
-    ? input.value.trim()
-    : '';
-
-}
-
-
-function presenceValue() {
-
-  const select =
-    $('presence');
-
-
-  return select
-    ? select.value
-    : '';
-
 }
 
 
@@ -1846,171 +1234,243 @@ function presenceValue() {
 function updateSummary() {
 
   const total =
-    calculateGlobalPIN(
-      allPINCountries
+    allPINCountries.reduce(
+      (sum, row) =>
+        sum +
+        (
+          num(row.population) ||
+          0
+        ),
+      0
     );
 
 
-  const totalElement =
-    $('totalNeed');
+  $('total').textContent =
+    compact(total);
 
+  $('recordCount').textContent =
+    allPINCountries.length;
 
-  if (totalElement) {
+  $('liveCount').textContent =
+    allPINCountries.length;
 
-    totalElement.textContent =
-      formatCompact(
-        total
-      );
-
-  }
-
-
-  const recordCount =
-    $('recordCount');
-
-
-  if (recordCount) {
-
-    recordCount.textContent =
-      allPINCountries.length;
-
-  }
-
-
-  const liveCount =
-    $('liveCount');
-
-
-  if (liveCount) {
-
-    liveCount.textContent =
-      allPINCountries.length;
-
-  }
-
-
-  const refresh =
-    $('lastRefresh');
-
-
-  if (refresh) {
-
-    refresh.textContent =
-      lastSuccessfulFetch
-        ? lastSuccessfulFetch.toLocaleString()
-        : '—';
-
-  }
-
+  $('refresh').textContent =
+    lastSuccessfulFetch
+      ? lastSuccessfulFetch
+          .toLocaleString()
+      : '—';
 }
 
 
 /* ============================================================
-   LOAD MORE
+   DETAIL VIEW
    ============================================================ */
 
-function loadMorePIN() {
+function openDetail(
+  iso
+) {
 
-  if (isLoading) {
+  const row =
+    allPINCountries.find(
+      item =>
+        item.iso3 ===
+        iso
+    );
 
+  if (!row) {
     return;
-
   }
 
 
-  visibleCount +=
-    LOAD_MORE_COUNT;
+  const pct =
+    row.christianPopulationPercent === null
+      ? 'Not available'
+      : `${row.christianPopulationPercent}%`;
 
 
-  renderPIN();
+  const christianPresence =
+    row.christianLabel ||
+    row.christianPresence ||
+    row.christian ||
+    'Not yet assessed';
 
+
+  const detail =
+    $('detail');
+
+
+  const body =
+    $('detailBody');
+
+
+  body.innerHTML = `
+
+    <div class="eyebrow">
+      ${esc(
+        row.type ||
+        'Humanitarian situation'
+      )}
+    </div>
+
+    <h2>
+      ${esc(row.location_name)}
+    </h2>
+
+    <div class="need">
+      ${compact(row.population)}
+    </div>
+
+    <div class="muted">
+      people in need
+    </div>
+
+    <div class="detail-grid">
+
+      <div>
+
+        PIN reference period
+
+        <strong>
+          ${esc(
+            date(
+              row.reference_period_start
+            )
+          )}
+
+          –
+
+          ${esc(
+            date(
+              row.reference_period_end
+            )
+          )}
+        </strong>
+
+      </div>
+
+      <div>
+
+        Crisis began
+
+        <strong>
+          ${esc(
+            row.started
+              ? date(row.started)
+              : 'Not yet documented'
+          )}
+        </strong>
+
+      </div>
+
+      <div>
+
+        Christian population
+
+        <strong class="christian">
+          ${esc(pct)}
+        </strong>
+
+        <small>
+          World Religion Database,
+          ${esc(row.religionYear || '2025')}
+        </small>
+
+      </div>
+
+      <div>
+
+        Christian presence
+
+        <strong class="christian">
+          ${esc(christianPresence)}
+        </strong>
+
+        <small>
+          This is a separate curated assessment;
+          it is not derived from the demographic percentage.
+        </small>
+
+      </div>
+
+    </div>
+
+    <p class="notice">
+
+      <strong>
+        Important:
+      </strong>
+
+      The Christian population percentage describes
+      the estimated share of the country's population
+      identified as Christian. It should not be interpreted
+      as church capacity, humanitarian response capacity,
+      organizational presence, or access.
+
+    </p>
+
+    <div class="sources">
+
+      <a
+        href="https://www.thearda.com/world-religion/np-sort?var=ADH_415"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        World Religion Database ↗
+      </a>
+
+      <a
+        href="https://reliefweb.int/country/${row.iso3.toLowerCase()}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        ReliefWeb ↗
+      </a>
+
+    </div>
+  `;
+
+
+  detail.style.display =
+    'block';
+}
+
+
+function closeDetail() {
+
+  $('detail').style.display =
+    'none';
 }
 
 
 /* ============================================================
-   SEARCH
-   ============================================================ */
-
-function handleSearch() {
-
-  visibleCount =
-    INITIAL_DISPLAY_COUNT;
-
-
-  renderPIN();
-
-}
-
-
-/* ============================================================
-   CLEAR SEARCH
-   ============================================================ */
-
-function clearSearch() {
-
-  const search =
-    $('search');
-
-
-  if (search) {
-
-    search.value =
-      '';
-
-  }
-
-
-  visibleCount =
-    INITIAL_DISPLAY_COUNT;
-
-
-  renderPIN();
-
-}
-
-
-/* ============================================================
-   FULL REFRESH
+   FULL DASHBOARD REFRESH
    ============================================================ */
 
 async function refreshDashboard() {
 
   if (isLoading) {
-
     return;
-
   }
-
 
   isLoading =
     true;
 
-
-  clearDiagnostics();
-
+  clearDiag();
 
   setStatus(
-    'Connecting to live humanitarian data…',
+    'Connecting to HDX HAPI…',
     false
   );
 
-
-  diagnostic(
-    'GLOBAL HUMANITARIAN DATA REFRESH'
+  diag(
+    'GLOBAL HAPI PIN REFRESH'
   );
 
-
-  diagnostic(
-    'HDX Humanitarian API'
+  diag(
+    'Endpoint: humanitarian-needs'
   );
 
-
-  diagnostic(
-    'Endpoint: affected-people/humanitarian-needs'
-  );
-
-
-  diagnostic(
+  diag(
     'Filters: Intersectoral / INN / admin level 0'
   );
 
@@ -2018,46 +1478,58 @@ async function refreshDashboard() {
   try {
 
     /*
-     * Load local supporting data and live HAPI data.
+     * Load supplementary datasets.
+     *
+     * Neither one is allowed to prevent HAPI
+     * from loading successfully.
      */
 
-    const [
-      records
-    ] = await Promise.all([
-      fetchAllPINRecords(),
-      loadSupportingData()
+    await Promise.all([
+      loadReligion(),
+      loadCrisisData()
     ]);
 
 
-    diagnostic(
-      'Selecting latest total PIN record for each country…'
+    /*
+     * Load live humanitarian data.
+     */
+
+    const records =
+      await fetchAllPIN();
+
+
+    diag(
+      `Global HAPI dataset: ${records.length} records`,
+      'ok'
     );
 
 
-    const countries =
-      selectLatestPIN(
+    /*
+     * Select one current total PIN record
+     * per country.
+     */
+
+    allPINCountries =
+      latestPIN(
         records
-      );
+      )
+        .map(
+          mergedRow
+        );
 
 
     if (
-      countries.length === 0
+      allPINCountries.length === 0
     ) {
 
       throw new Error(
-        'HAPI returned records, but no country-level total PIN records matched the dashboard filters.'
+        'No country-level total PIN records matched the filters.'
       );
-
     }
-
-
-    allPINCountries =
-      countries;
 
 
     visibleCount =
       INITIAL_DISPLAY_COUNT;
-
 
     lastSuccessfulFetch =
       new Date();
@@ -2065,8 +1537,7 @@ async function refreshDashboard() {
 
     updateSummary();
 
-
-    renderPIN();
+    render();
 
 
     setStatus(
@@ -2075,33 +1546,28 @@ async function refreshDashboard() {
     );
 
 
-    diagnostic(
+    diag(
       `Selected ${allPINCountries.length} countries`,
       'ok'
     );
 
 
-    diagnostic(
+    diag(
       `Largest PIN: ${
-        allPINCountries[0]?.location_name ||
-        '—'
+        allPINCountries[0]
+          .location_name
       } · ${
-        formatNumber(
-          allPINCountries[0]?.population
+        fmt(
+          allPINCountries[0]
+            .population
         )
       }`,
       'ok'
     );
 
 
-    diagnostic(
-      'Religion and crisis context loaded',
-      'ok'
-    );
-
-
-    diagnostic(
-      'Dashboard successfully refreshed',
+    diag(
+      'Global PIN dashboard successfully refreshed',
       'ok'
     );
 
@@ -2115,67 +1581,42 @@ async function refreshDashboard() {
 
 
     setStatus(
-      'Live data unavailable',
+      'HAPI unavailable · live PIN data unavailable',
       false
     );
 
 
-    diagnostic(
+    diag(
       `ERROR: ${error.message}`,
       'bad'
     );
 
 
-    const grid =
-      $('crisisGrid');
+    $('grid').innerHTML = `
 
+      <div class="empty">
 
-    if (grid) {
+        <h2>
+          Live humanitarian data unavailable
+        </h2>
 
-      grid.innerHTML = `
+        <p>
+          ${esc(error.message)}
+        </p>
 
-        <div class="error-state">
+        <p>
+          Check the live connection log above
+          and try again.
+        </p>
 
-          <h2>
-            Live humanitarian data unavailable
-          </h2>
-
-          <p>
-            The dashboard could not retrieve the
-            current People in Need data or supporting
-            country data.
-          </p>
-
-          <p>
-            Check your internet connection and try
-            Refresh now again.
-          </p>
-
-        </div>
-
-      `;
-
-    }
-
-
-    const loadMore =
-      $('loadMore');
-
-
-    if (loadMore) {
-
-      loadMore.style.display =
-        'none';
-
-    }
+      </div>
+    `;
 
   } finally {
 
     isLoading =
       false;
-
   }
-
 }
 
 
@@ -2183,117 +1624,104 @@ async function refreshDashboard() {
    EVENT HANDLERS
    ============================================================ */
 
+$('loadMore')
+  .addEventListener(
+    'click',
+    () => {
 
-/*
- * Refresh
- */
+      visibleCount +=
+        LOAD_MORE_COUNT;
 
-const refreshButton =
-  $('refreshBtn');
+      render();
+    }
+  );
 
 
-if (refreshButton) {
+$('search')
+  .addEventListener(
+    'input',
+    () => {
 
-  refreshButton.addEventListener(
+      visibleCount =
+        INITIAL_DISPLAY_COUNT;
+
+      render();
+    }
+  );
+
+
+$('christian')
+  .addEventListener(
+    'change',
+    () => {
+
+      visibleCount =
+        INITIAL_DISPLAY_COUNT;
+
+      render();
+    }
+  );
+
+
+$('sort')
+  .addEventListener(
+    'change',
+    () => {
+
+      visibleCount =
+        INITIAL_DISPLAY_COUNT;
+
+      render();
+    }
+  );
+
+
+$('refreshButton')
+  .addEventListener(
     'click',
     refreshDashboard
   );
 
-}
 
-
-/*
- * Load more
- */
-
-const loadMoreButton =
-  $('loadMore');
-
-
-if (loadMoreButton) {
-
-  loadMoreButton.addEventListener(
+$('closeDetail')
+  .addEventListener(
     'click',
-    loadMorePIN
+    closeDetail
   );
 
-}
 
-
-/*
- * Search
- */
-
-const searchInput =
-  $('search');
-
-
-if (searchInput) {
-
-  searchInput.addEventListener(
-    'input',
-    handleSearch
-  );
-
-}
-
-
-/*
- * Clear search
- */
-
-const clearSearchButton =
-  $('clearSearch');
-
-
-if (clearSearchButton) {
-
-  clearSearchButton.addEventListener(
+$('detail')
+  .addEventListener(
     'click',
-    clearSearch
+    event => {
+
+      if (
+        event.target.id ===
+        'detail'
+      ) {
+
+        closeDetail();
+      }
+    }
   );
-
-}
-
-
-/*
- * Christian-presence filter
- */
-
-const presenceSelect =
-  $('presence');
-
-
-if (presenceSelect) {
-
-  presenceSelect.addEventListener(
-    'change',
-    handleSearch
-  );
-
-}
-
-
-/*
- * Sort
- */
-
-const sortSelect =
-  $('sort');
-
-
-if (sortSelect) {
-
-  sortSelect.addEventListener(
-    'change',
-    handleSearch
-  );
-
-}
 
 
 /* ============================================================
-   INITIALIZATION
+   GLOBAL FUNCTIONS
+   ============================================================ */
+
+window.openDetail =
+  openDetail;
+
+window.closeDetail =
+  closeDetail;
+
+window.refreshDashboard =
+  refreshDashboard;
+
+
+/* ============================================================
+   INITIAL LOAD
    ============================================================ */
 
 setStatus(
@@ -2301,14 +1729,12 @@ setStatus(
   false
 );
 
-
-diagnostic(
+diag(
   'Dashboard initialized',
   'ok'
 );
 
-
-diagnostic(
+diag(
   'HAPI app identifier configured',
   HDX_HAPI_APP_ID
     ? 'ok'
@@ -2317,29 +1743,17 @@ diagnostic(
 
 
 /*
- * Initial live load.
+ * Initial live refresh.
  */
 
 refreshDashboard();
 
 
 /*
- * Automatic six-hour refresh.
+ * Refresh every six hours.
  */
 
 setInterval(
   refreshDashboard,
   REFRESH_INTERVAL_MS
 );
-
-
-/*
- * Preserve compatibility with existing markup.
- */
-
-window.loadMorePIN =
-  loadMorePIN;
-
-
-window.refreshDashboard =
-  refreshDashboard;
