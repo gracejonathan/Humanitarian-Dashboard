@@ -2,470 +2,723 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1"
-  >
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <meta
     name="description"
-    content="Global humanitarian crisis dashboard using public humanitarian data from OCHA, HDX and World Religion Database."
+    content="Global humanitarian dashboard using live HDX HAPI People in Need data and separate country-level Christian population data."
   >
 
   <title>Global Humanitarian Crisis Dashboard</title>
 
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f4f6f8, #0f1418);
+      --surface: light-dark(#fff, #171d22);
+      --surface2: light-dark(#eef2f5, #20272d);
+      --text: light-dark(#17212b, #edf2f5);
+      --muted: light-dark(#65727d, #a9b4bc);
+      --line: light-dark(#dce2e7, #303940);
+      --accent: #b45309;
+      --accent2: #0f766e;
+      --good: #28744a;
+      --warn: #9a6a00;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: auto;
+    }
+
+    .top {
+      padding: 34px 22px 26px;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    h1 {
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1;
+      letter-spacing: -.045em;
+      margin: 8px 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 820px;
+    }
+
+    .status {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--warn);
+    }
+
+    .dot.live {
+      background: var(--good);
+    }
+
+    main {
+      padding: 24px 22px 50px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .05em;
+    }
+
+    .num {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      margin-top: 4px;
+    }
+
+    .connection {
+      margin: 18px 0;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .connection-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .connection-title {
+      font-weight: 800;
+    }
+
+    .connection-sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .log {
+      margin-top: 10px;
+      background: var(--surface2);
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 12px;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .diagline {
+      display: flex;
+      gap: 8px;
+      margin: 3px 0;
+    }
+
+    .diagtime {
+      color: var(--muted);
+      min-width: 64px;
+    }
+
+    .ok {
+      color: var(--good);
+    }
+
+    .bad {
+      color: #b23b32;
+    }
+
+    .wait {
+      color: var(--warn);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 20px 0 14px;
+    }
+
+    .toolbar input {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .toolbar input,
+    .toolbar select,
+    .toolbar button,
+    .sources button {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .toolbar button {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 19px;
+    }
+
+    .rank {
+      position: absolute;
+      top: 15px;
+      right: 17px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding-right: 35px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .iso {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .08em;
+      margin-top: 2px;
+    }
+
+    .tag {
+      background: var(--surface2);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      height: max-content;
+    }
+
+    .need {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 15px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .exact {
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+      margin-top: 15px;
+      padding-top: 15px;
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .christian {
+      color: var(--accent2) !important;
+    }
+
+    .source-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 13px;
+    }
+
+    .sources {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 13px;
+    }
+
+    .sources a,
+    .sources button {
+      color: var(--accent2);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      padding: 5px 8px;
+      border-radius: 7px;
+      font-size: 11px;
+      background: transparent;
+    }
+
+    .empty {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 25px;
+      grid-column: 1 / -1;
+    }
+
+    .empty h2 {
+      margin-top: 0;
+    }
+
+    .load-more-wrap {
+      text-align: center;
+      padding: 22px 0;
+    }
+
+    .load-more {
+      display: none;
+      background: var(--text);
+      color: var(--bg);
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 16px;
+    }
+
+    .showing {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .method {
+      margin-top: 24px;
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .method h2 {
+      margin: 6px 0 10px;
+    }
+
+    .method p {
+      color: var(--muted);
+      max-width: 900px;
+    }
+
+    .method strong {
+      color: var(--text);
+    }
+
+    .detail {
+      position: fixed;
+      inset: 0;
+      background: #0009;
+      display: none;
+      padding: 18px;
+      z-index: 10;
+    }
+
+    .panel {
+      max-width: 760px;
+      max-height: 92vh;
+      overflow: auto;
+      margin: 3vh auto;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 25px;
+    }
+
+    .close {
+      float: right;
+      background: var(--surface2);
+      color: var(--text);
+      border: 0;
+      border-radius: 8px;
+      padding: 7px 10px;
+    }
+
+    .panel h2 {
+      font-size: 32px;
+      margin: 7px 0;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      border-top: 1px solid var(--line);
+      margin-top: 18px;
+      padding-top: 18px;
+    }
+
+    .detail-grid strong {
+      display: block;
+      margin-top: 3px;
+    }
+
+    .detail-grid small {
+      display: block;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .notice {
+      margin: 18px 0;
+      padding: 14px 16px;
+      background: var(--surface2);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .notice strong {
+      color: var(--text);
+    }
+
+    footer {
+      padding: 0 22px 35px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .footer-inner {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 800px) {
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .meta,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .connection-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- ======================================================
-       HEADER
-       ====================================================== -->
-
-  <header class="hero">
-
-    <div class="wrap">
-
-      <div class="eyebrow">
-        HUMANITARIAN INTELLIGENCE · PUBLIC DATA
-      </div>
-
-      <h1>
-        Global Crisis Dashboard
-      </h1>
-
-      <p>
-        A continuously refreshed view of humanitarian need,
-        crisis chronology, and the Christian population context
-        in countries reporting significant humanitarian need.
-      </p>
-
-      <div
-        id="connectionStatus"
-        class="status status-wait"
-        aria-live="polite"
-      >
-        Connecting to humanitarian data…
-      </div>
-
+<header>
+  <div class="wrap top">
+    <div class="eyebrow">
+      Humanitarian intelligence · public data
     </div>
 
-  </header>
+    <h1>Global Crisis Dashboard</h1>
 
+    <div class="subtitle">
+      A continuously refreshed view of People in Need using public
+      humanitarian data from OCHA and HDX, with separate country-level
+      information about Christian population and documented Christian presence.
+    </div>
 
-  <!-- ======================================================
-       MAIN
-       ====================================================== -->
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status">Starting dashboard…</span>
+    </div>
+  </div>
+</header>
 
-  <main class="wrap">
+<main class="wrap">
 
+  <section class="connection">
 
-    <!-- ====================================================
-         LIVE DATA MONITOR
-         ==================================================== -->
+    <div class="connection-head">
 
-    <section class="connection-panel">
-
-      <div class="section-title">
-
-        <div>
-
-          <div class="eyebrow">
-            LIVE DATA MONITOR
-          </div>
-
-          <h2>
-            Current data connections
-          </h2>
-
+      <div>
+        <div class="connection-title">
+          Live data monitor
         </div>
 
-        <button
-          id="refreshBtn"
-          type="button"
-        >
-          Refresh now
-        </button>
-
+        <div class="connection-sub">
+          HDX Humanitarian API · country-level intersectoral People in Need
+        </div>
       </div>
 
-
-      <div
-        id="connectionLog"
-        class="log"
-        aria-live="polite"
-      ></div>
-
-    </section>
-
-
-    <!-- ====================================================
-         SUMMARY
-         ==================================================== -->
-
-    <section class="stats">
-
-      <div class="stat">
-
-        <span>
-          People in need
-        </span>
-
-        <strong id="totalNeed">
-          —
-        </strong>
-
-      </div>
-
-
-      <div class="stat">
-
-        <span>
-          Countries with PIN data
-        </span>
-
-        <strong id="recordCount">
-          —
-        </strong>
-
-      </div>
-
-
-      <div class="stat">
-
-        <span>
-          Live HAPI records
-        </span>
-
-        <strong id="liveCount">
-          —
-        </strong>
-
-      </div>
-
-
-      <div class="stat">
-
-        <span>
-          Last refresh
-        </span>
-
-        <strong id="lastRefresh">
-          —
-        </strong>
-
-      </div>
-
-    </section>
-
-
-    <!-- ====================================================
-         FILTERS
-         ==================================================== -->
-
-    <section class="toolbar">
-
-      <div class="search-wrap">
-
-        <input
-          id="search"
-          type="search"
-          placeholder="Search country or ISO code"
-          aria-label="Search country or ISO code"
-        >
-
-        <button
-          id="clearSearch"
-          type="button"
-        >
-          Clear
-        </button>
-
-      </div>
-
-
-      <select
-        id="presence"
-        aria-label="Filter by Christian presence evidence"
-      >
-
-        <option value="">
-          All Christian-presence evidence
-        </option>
-
-        <option value="documented">
-          Documented Christian presence
-        </option>
-
-        <option value="limited">
-          Small / limited Christian presence
-        </option>
-
-        <option value="unknown">
-          Unknown / not yet researched
-        </option>
-
-      </select>
-
-
-      <select
-        id="sort"
-        aria-label="Sort countries"
-      >
-
-        <option value="need">
-          People in need ↓
-        </option>
-
-        <option value="name">
-          Country A–Z
-        </option>
-
-        <option value="start">
-          Crisis start
-        </option>
-
-        <option value="christian">
-          Christian population %
-        </option>
-
-      </select>
-
-    </section>
-
-
-    <!-- ====================================================
-         DATA DESCRIPTION
-         ==================================================== -->
-
-    <section class="data-intro">
-
-      <div class="eyebrow">
-        PEOPLE IN NEED
-      </div>
-
-      <h2>
-        Countries with the greatest humanitarian need
-      </h2>
-
-      <p>
-        Rankings use the latest available country-level
-        intersectoral People in Need assessment returned by
-        the HDX Humanitarian API.
-      </p>
-
-      <div
-        id="showing"
-        class="showing"
-      >
-        Loading countries…
-      </div>
-
-    </section>
-
-
-    <!-- ====================================================
-         COUNTRY CARDS
-         ==================================================== -->
-
-    <section
-      id="crisisGrid"
-      class="grid"
-      aria-live="polite"
-    ></section>
-
-
-    <!-- ====================================================
-         LOAD MORE
-         ==================================================== -->
-
-    <div class="load-more-wrap">
-
-      <button
-        id="loadMore"
-        type="button"
-        style="display:none"
-      >
-        Load more
+      <button id="refreshButton">
+        Refresh now
       </button>
 
     </div>
 
+    <div class="log" aria-live="polite">
+      <div id="diagLog"></div>
+    </div>
 
-    <!-- ====================================================
-         METHODOLOGY
-         ==================================================== -->
+  </section>
 
-    <section class="method">
 
-      <div class="eyebrow">
-        METHODOLOGY
+  <section class="stats">
+
+    <div class="stat">
+      <div class="label">PEOPLE IN NEED</div>
+      <div class="num" id="total">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">COUNTRIES WITH PIN DATA</div>
+      <div class="num" id="liveCount">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">PIN RECORDS USED</div>
+      <div class="num" id="recordCount">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="label">LAST REFRESH</div>
+      <div class="num" id="refresh" style="font-size:18px">
+        —
       </div>
+    </div>
 
-      <h2>
-        How to read this dashboard
-      </h2>
-
-
-      <h3>
-        People in Need
-      </h3>
-
-      <p>
-        <strong>People in Need (PIN)</strong> is the principal
-        humanitarian measure displayed here. The dashboard
-        retrieves country-level intersectoral PIN records
-        directly from the HDX Humanitarian API (HAPI).
-      </p>
-
-      <p>
-        The dashboard uses national-level records
-        (<code>admin_level = 0</code>) and the total
-        intersectoral population in need
-        (<code>population_status = INN</code>). Demographic
-        subsets such as Adult and Adult - Female are excluded.
-      </p>
-
-      <p>
-        Where HAPI provides multiple reporting periods for a
-        country, the dashboard selects the record with the
-        most recent reference-period end date.
-      </p>
+  </section>
 
 
-      <h3>
-        Reference period
-      </h3>
+  <section class="toolbar">
 
-      <p>
-        A PIN number is not necessarily a count of people
-        identified on the day you visit this website. The
-        reference period shown on each country card identifies
-        the period to which the humanitarian assessment applies.
-      </p>
+    <input
+      id="search"
+      type="search"
+      placeholder="Search country or ISO code"
+      aria-label="Search country or ISO code"
+    >
 
+    <select
+      id="christian"
+      aria-label="Filter Christian presence"
+    >
+      <option value="">
+        All Christian-presence assessments
+      </option>
 
-      <h3>
-        Christian population
-      </h3>
+      <option value="documented">
+        Documented presence
+      </option>
 
-      <p>
-        Christian population percentage is a separate
-        demographic indicator. It comes from the
-        <strong>World Religion Database</strong> dataset
-        stored in <code>data/religion.json</code>.
-      </p>
+      <option value="limited">
+        Small / limited presence
+      </option>
+    </select>
 
-      <p>
-        Christian population percentage should not be
-        interpreted as a measure of the number of churches,
-        Christian organizations, humanitarian workers, or
-        operational Christian presence in a crisis.
-      </p>
+    <select
+      id="sort"
+      aria-label="Sort countries"
+    >
+      <option value="need">
+        People in need ↓
+      </option>
 
+      <option value="name">
+        Country A–Z
+      </option>
 
-      <h3>
-        Christian presence
-      </h3>
+      <option value="start">
+        Crisis start
+      </option>
+    </select>
 
-      <p>
-        Where available, the dashboard also displays the
-        separately curated Christian-presence assessment from
-        <code>data/crises.json</code>. “Unknown” means that
-        sufficient evidence has not yet been established; it
-        does not mean absence.
-      </p>
-
-
-      <h3>
-        Crisis chronology
-      </h3>
-
-      <p>
-        Crisis type and start date are maintained separately
-        from the live PIN data. They provide context for the
-        humanitarian assessment but are not used to calculate
-        the PIN figure.
-      </p>
+  </section>
 
 
-      <h3>
-        Live-data principle
-      </h3>
-
-      <p>
-        Humanitarian APIs can change their schemas or
-        availability. The dashboard therefore reports a
-        connection failure rather than silently presenting old
-        humanitarian numbers as live data.
-      </p>
-
-    </section>
+  <div
+    class="showing"
+    id="showing"
+  >
+    Loading countries…
+  </div>
 
 
-    <!-- ====================================================
-         DATA CONNECTION
-         ==================================================== -->
-
-    <section class="method">
-
-      <div class="eyebrow">
-        DATA CONNECTION
-      </div>
-
-      <h2>
-        Public data sources
-      </h2>
-
-      <p>
-        <strong>Humanitarian need:</strong>
-        HDX Humanitarian API (HAPI) / United Nations Office
-        for the Coordination of Humanitarian Affairs (OCHA).
-      </p>
-
-      <p>
-        <strong>Christian population:</strong>
-        World Religion Database, as represented in
-        <code>data/religion.json</code>.
-      </p>
-
-      <p>
-        <strong>Crisis context:</strong>
-        Curated country-level data in
-        <code>data/crises.json</code>, with source links
-        retained for verification.
-      </p>
-
-      <p>
-        This dashboard presents public data and does not
-        independently estimate humanitarian need.
-      </p>
-
-    </section>
-
-  </main>
+  <section
+    id="grid"
+    class="grid"
+    aria-live="polite"
+  ></section>
 
 
-  <!-- ======================================================
-       FOOTER
-       ====================================================== -->
+  <div class="load-more-wrap">
+    <button
+      id="loadMore"
+      class="load-more"
+    >
+      Load more
+    </button>
+  </div>
 
-  <footer class="wrap">
+
+  <section class="method">
+
+    <div class="eyebrow">
+      Data definitions
+    </div>
+
+    <h2>
+      How to interpret the dashboard
+    </h2>
 
     <p>
-      Sources: OCHA · HDX Humanitarian API · World Religion
-      Database · ReliefWeb
+      <strong>People in Need (PIN)</strong> is the live humanitarian
+      figure displayed and comes directly from the HDX Humanitarian
+      API (HAPI). The dashboard uses the national-level intersectoral
+      total (admin level 0, population status INN) and selects the most
+      recent reference period available for each country.
     </p>
 
-  </footer>
+    <p>
+      <strong>Christian population</strong> is a separate demographic
+      measure: the percentage of a country's population identified as
+      Christian in the World Religion Database. It is not a measure of
+      churches, Christian organizations, humanitarian capacity, or access.
+    </p>
+
+    <p>
+      <strong>Christian presence</strong> is a separate curated
+      country-level assessment where documented information is available.
+      “Not yet assessed” means the dashboard has not established a
+      sufficient country-level assessment; it does not mean absence.
+    </p>
+
+    <p>
+      <strong>Crisis began</strong> is a separate chronology field and
+      is shown only where the dashboard has a documented start date.
+      It does not determine the PIN figure.
+    </p>
+
+  </section>
+
+</main>
 
 
-  <!-- ======================================================
-       APPLICATION
-       ====================================================== -->
+<footer class="wrap">
 
-  <script src="app.js"></script>
+  <div class="footer-inner">
+
+    Humanitarian data: OCHA / HDX HAPI.
+    Demographic data: World Religion Database
+    (2025 data in <code>data/religion.json</code>).
+    Curated crisis chronology and Christian-presence information
+    are maintained separately from the live PIN data.
+
+  </div>
+
+</footer>
+
+
+<div
+  class="detail"
+  id="detail"
+>
+
+  <div class="panel">
+
+    <button
+      class="close"
+      id="closeDetail"
+    >
+      Close
+    </button>
+
+    <div id="detailBody"></div>
+
+  </div>
+
+</div>
+
+
+<script src="app.js"></script>
 
 </body>
 </html>
