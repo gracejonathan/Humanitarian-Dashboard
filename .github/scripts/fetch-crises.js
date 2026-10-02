@@ -4,7 +4,7 @@
  * Fetch crisis data from ReliefWeb API v2 and write to data/crises.json
  * This script runs server-side (via GitHub Actions), avoiding CORS issues.
  * 
- * Tries multiple API query strategies to find active disasters.
+ * Now with comprehensive logging to diagnose API response format.
  */
 
 const https = require('https');
@@ -26,7 +26,6 @@ const FALLBACK_CRISIS_SEED = [
   { id: "haiti", name: "Haiti", iso3: "HTI", region: "Caribbean", type: "Complex emergency / insecurity", started: "2020-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/hti"], ["HDX", "https://data.humdata.org/country/hti"]] }
 ];
 
-// Hardcoded country ISO3 to region mapping
 const COUNTRY_REGIONS = {
   'AFG': 'South Asia', 'BGD': 'South Asia', 'BTN': 'South Asia', 'IND': 'South Asia', 'LKA': 'South Asia',
   'MDV': 'South Asia', 'NPL': 'South Asia', 'PAK': 'South Asia', 'CHN': 'East Asia', 'HKG': 'East Asia',
@@ -62,7 +61,8 @@ const COUNTRY_REGIONS = {
   'PER': 'South America', 'SUR': 'South America', 'URY': 'South America', 'VEN': 'South America',
   'AUS': 'Oceania', 'FJI': 'Oceania', 'KIR': 'Oceania', 'MHL': 'Oceania', 'FSM': 'Oceania', 'NRU': 'Oceania',
   'NZL': 'Oceania', 'PLW': 'Oceania', 'PNG': 'Oceania', 'WSM': 'Oceania', 'SLB': 'Oceania', 'TON': 'Oceania',
-  'TUV': 'Oceania', 'VUT': 'Oceania', 'CAN': 'North America', 'MEX': 'North America', 'USA': 'North America'
+  'TUV': 'Oceania', 'VUT': 'Oceania', 'CAN': 'North America', 'MEX': 'North America', 'USA': 'North America',
+  'TUR': 'Europe', 'JOR': 'Middle East'
 };
 
 async function fetchJSON(url) {
@@ -81,129 +81,94 @@ async function fetchJSON(url) {
   });
 }
 
-function normalizeCrises(jsonData) {
-  if (!jsonData || !jsonData.data || !Array.isArray(jsonData.data)) {
-    return null;
-  }
-
-  const normalized = jsonData.data
-    .map((item, idx) => {
-      const fields = item?.fields || {};
-      const name = fields?.name || 'Unknown Crisis';
-      
-      // Try both 'type' and 'disaster_type' fields
-      const typeArray = fields?.disaster_type || fields?.type || [];
-      const type = typeArray?.[0]?.name || 'Humanitarian emergency';
-      
-      // ReliefWeb returns 'country' as an array, get the first country's ISO3
-      let iso3 = '';
-      if (Array.isArray(fields?.country) && fields.country.length > 0) {
-        iso3 = fields.country[0]?.iso3 || '';
-      }
-      iso3 = iso3.toUpperCase();
-      
-      const started = fields?.date?.start || fields?.date?.created || null;
-      const region = COUNTRY_REGIONS[iso3] || 'Global';
-
-      if (idx < 5) {
-        console.log(`[fetch-crises] Item ${idx}: ${name} (${iso3}) - ${type}`);
-      }
-
-      return {
-        id: (iso3 || name).toLowerCase().replace(/\s+/g, '-'),
-        iso3: iso3 || 'UNK',
-        name,
-        region,
-        type,
-        started,
-        christianPresence: 'documented',
-        christianLabel: 'ReliefWeb live source',
-        christianEvidence: 'Live crisis source from ReliefWeb API v2; source-backed until verified',
-        sourceLinks: [['ReliefWeb', `https://reliefweb.int/disasters/${item?.id || ''}`], ['ReliefWeb Map', 'https://reliefweb.int/map']]
-      };
-    })
-    .filter(crisis => crisis.iso3 !== 'UNK');
-
-  return normalized.length > 0 ? normalized : null;
-}
-
 async function fetchCrises() {
-  const appname = 'humanitarian-dashboard';
+  console.log('[fetch-crises] Starting ReliefWeb API fetch...');
   
-  // Strategy 1: Try filtered query for current disasters
-  console.log('[fetch-crises] Strategy 1: Filtered query (status=current)');
-  try {
-    const url1 = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&filter[field]=status&filter[value]=current&limit=200`;
-    console.log(`[fetch-crises] Trying: ${url1}`);
-    const json1 = await fetchJSON(url1);
-    console.log(`[fetch-crises] Response keys: ${Object.keys(json1 || {}).join(', ')}`);
-    console.log(`[fetch-crises] Data count: ${json1?.data?.length || 0}`);
-    
-    const normalized1 = normalizeCrises(json1);
-    if (normalized1 && normalized1.length > 0) {
-      console.log(`[fetch-crises] ✓ Strategy 1 succeeded: ${normalized1.length} crises found`);
-      return normalized1;
-    }
-  } catch (error) {
-    console.log(`[fetch-crises] Strategy 1 failed: ${error.message}`);
-  }
+  const appname = 'humanitarian-dashboard';
+  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=200`;
+  
+  console.log(`[fetch-crises] URL: ${url}`);
 
-  // Strategy 2: Try emergencies endpoint instead
-  console.log('\n[fetch-crises] Strategy 2: Emergencies endpoint');
   try {
-    const url2 = `https://api.reliefweb.int/v2/emergencies?appname=${encodeURIComponent(appname)}&limit=200`;
-    console.log(`[fetch-crises] Trying: ${url2}`);
-    const json2 = await fetchJSON(url2);
-    console.log(`[fetch-crises] Response keys: ${Object.keys(json2 || {}).join(', ')}`);
-    console.log(`[fetch-crises] Data count: ${json2?.data?.length || 0}`);
+    const json = await fetchJSON(url);
     
-    const normalized2 = normalizeCrises(json2);
-    if (normalized2 && normalized2.length > 0) {
-      console.log(`[fetch-crises] ✓ Strategy 2 succeeded: ${normalized2.length} crises found`);
-      return normalized2;
-    }
-  } catch (error) {
-    console.log(`[fetch-crises] Strategy 2 failed: ${error.message}`);
-  }
-
-  // Strategy 3: Try basic disasters endpoint without filters
-  console.log('\n[fetch-crises] Strategy 3: Basic disasters (no filters)');
-  try {
-    const url3 = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=200&sort=date:desc`;
-    console.log(`[fetch-crises] Trying: ${url3}`);
-    const json3 = await fetchJSON(url3);
-    console.log(`[fetch-crises] Response keys: ${Object.keys(json3 || {}).join(', ')}`);
-    console.log(`[fetch-crises] Data count: ${json3?.data?.length || 0}`);
+    // Log meta info
+    console.log(`[fetch-crises] Response meta:`, JSON.stringify(json?.meta || {}));
     
-    const normalized3 = normalizeCrises(json3);
-    if (normalized3 && normalized3.length > 0) {
-      console.log(`[fetch-crises] ✓ Strategy 3 succeeded: ${normalized3.length} crises found`);
-      return normalized3;
+    if (!json || !json.data || !Array.isArray(json.data)) {
+      console.log('[fetch-crises] Invalid response structure. Response:', JSON.stringify(json || {}).substring(0, 500));
+      console.log('[fetch-crises] Using fallback');
+      return FALLBACK_CRISIS_SEED;
     }
-  } catch (error) {
-    console.log(`[fetch-crises] Strategy 3 failed: ${error.message}`);
-  }
 
-  // Strategy 4: Try with fields specification
-  console.log('\n[fetch-crises] Strategy 4: With fields filter');
-  try {
-    const url4 = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&fields[include]=name,country,type,disaster_type,date&limit=200`;
-    console.log(`[fetch-crises] Trying: ${url4}`);
-    const json4 = await fetchJSON(url4);
-    console.log(`[fetch-crises] Response keys: ${Object.keys(json4 || {}).join(', ')}`);
-    console.log(`[fetch-crises] Data count: ${json4?.data?.length || 0}`);
+    console.log(`[fetch-crises] API returned ${json.data.length} disasters`);
+
+    // Debug: show all status values found
+    const statusSet = new Set();
+    json.data.forEach(item => {
+      if (item?.fields?.status) {
+        statusSet.add(item.fields.status);
+      }
+    });
+    console.log(`[fetch-crises] Unique status values in data: ${Array.from(statusSet).join(', ') || '(none found)'}`);
+
+    const normalized = json.data
+      .map((item, idx) => {
+        const fields = item?.fields || {};
+        const name = fields?.name || 'Unknown Crisis';
+        
+        // Extract ISO3 from country array
+        let iso3 = '';
+        if (Array.isArray(fields?.country) && fields.country.length > 0) {
+          iso3 = (fields.country[0]?.iso3 || '').toUpperCase();
+        }
+        
+        const started = fields?.date?.start || fields?.date?.created || null;
+        // Try both field names
+        const typeArray = fields?.disaster_type || fields?.type || [];
+        const type = typeArray?.[0]?.name || 'Humanitarian emergency';
+        const region = COUNTRY_REGIONS[iso3] || 'Global';
+        const status = fields?.status || 'unknown';
+
+        if (idx < 10) {
+          console.log(`[fetch-crises] [${idx}] ${name} | iso3=${iso3} | status=${status} | type=${type}`);
+        }
+
+        return {
+          id: (iso3 || name).toLowerCase().replace(/\s+/g, '-'),
+          iso3: iso3 || 'UNK',
+          name,
+          region,
+          type,
+          started,
+          christianPresence: 'documented',
+          christianLabel: 'ReliefWeb live source',
+          christianEvidence: 'Live crisis source from ReliefWeb API v2; source-backed until verified',
+          sourceLinks: [['ReliefWeb', `https://reliefweb.int/disasters/${item?.id || ''}`], ['ReliefWeb Map', 'https://reliefweb.int/map']]
+        };
+      })
+      .filter(crisis => crisis.iso3 !== 'UNK');
+
+    console.log(`[fetch-crises] After filtering for valid ISO3: ${normalized.length} crises`);
     
-    const normalized4 = normalizeCrises(json4);
-    if (normalized4 && normalized4.length > 0) {
-      console.log(`[fetch-crises] ✓ Strategy 4 succeeded: ${normalized4.length} crises found`);
-      return normalized4;
+    if (normalized.length === 0) {
+      console.log('[fetch-crises] ✗ No valid crises found after filtering. Using fallback.');
+      console.log('[fetch-crises] First raw item:', JSON.stringify(json.data[0] || {}).substring(0, 500));
+      return FALLBACK_CRISIS_SEED;
     }
-  } catch (error) {
-    console.log(`[fetch-crises] Strategy 4 failed: ${error.message}`);
-  }
 
-  console.log('\n[fetch-crises] All strategies failed; using fallback crisis seed');
-  return FALLBACK_CRISIS_SEED;
+    console.log(`[fetch-crises] ✓ Successfully fetched ${normalized.length} live crises from ReliefWeb`);
+    normalized.slice(0, 5).forEach((c, i) => {
+      console.log(`  [${i}] ${c.name} (${c.iso3}) - ${c.region}`);
+    });
+    
+    return normalized;
+  } catch (error) {
+    console.error(`[fetch-crises] ✗ Error: ${error.message}`);
+    console.error(`[fetch-crises] Stack:`, error.stack?.substring(0, 300));
+    console.log('[fetch-crises] Using fallback');
+    return FALLBACK_CRISIS_SEED;
+  }
 }
 
 async function main() {
@@ -218,10 +183,10 @@ async function main() {
   }
 
   fs.writeFileSync(outputFile, JSON.stringify(output, null, 2));
-  console.log(`[fetch-crises] Wrote ${crises.length} crises to ${outputFile}`);
+  console.log(`[fetch-crises] ✓ Wrote ${crises.length} crises to ${outputFile}`);
 }
 
 main().catch(err => {
-  console.error('[fetch-crises] Fatal error:', err);
+  console.error('[fetch-crises] FATAL:', err);
   process.exit(1);
 });
