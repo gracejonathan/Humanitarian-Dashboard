@@ -74,13 +74,28 @@ function normalizeIso3(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
-function looksLikeInNeedMetric(value) {
-  const label = String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  return label.includes("inneed") ||
-    label.includes("peopleinneed") ||
-    label.includes("personsinneed") ||
-    label.includes("peopleneed") ||
-    label.includes("pin");
+function collectAllNumbers(value, path = "", results = []) {
+  if (value == null) return results;
+
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      collectAllNumbers(value[i], `${path}[${i}]`, results);
+    }
+    return results;
+  }
+
+  if (typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      const newPath = path ? `${path}.${key}` : key;
+      if (typeof child === "number" && Number.isFinite(child) && child > 0 && child < 1e12) {
+        results.push({ value: child, path: newPath, key });
+      }
+      collectAllNumbers(child, newPath, results);
+    }
+    return results;
+  }
+
+  return results;
 }
 
 async function loadChristianPercentages() {
@@ -200,85 +215,17 @@ function extractPlans(json) {
   return map;
 }
 
-function extractPIN(json) {
+function extractPIN(json, countryName = "") {
   if (!json) return null;
 
-  // The plan endpoint now puts the overall PIN in the plan version's details,
-  // rather than in an attachment metric total. Check that canonical location
-  // first so that a sector or demographic subtotal cannot be reported as PIN.
-  const planDetails = [
-    json?.data?.plan?.planVersion?.value?.planDetails,
-    json?.data?.planVersion?.value?.planDetails,
-    json?.data?.plan?.version?.value?.planDetails,
-    json?.data?.plan?.planDetails,
-    json?.data?.planDetails,
-    ...[json?.data?.attachments, json?.attachments]
-      .filter(Array.isArray)
-      .flatMap(attachments => attachments.map(attachment => attachment?.attachmentVersion?.value?.planDetails))
-  ];
-
-  for (const details of planDetails) {
-    if (!details || typeof details !== "object") continue;
-    const value = details.peopleInNeed ?? details.people_in_need ?? details.pin;
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      return { value: numeric, description: "overall people in need" };
-    }
+  const allNumbers = collectAllNumbers(json);
+  if (allNumbers.length > 0) {
+    allNumbers.sort((a, b) => b.value - a.value);
+    log(`${countryName}: found ${allNumbers.length} total numeric values. Top 5: ${allNumbers.slice(0, 5).map(n => `${fmt(n.value)} @ ${n.path}`).join(" | ")}`, "wait");
+    return allNumbers[0];
   }
 
-  const candidates = [];
-
-  const addCandidate = (value, description = "") => {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) candidates.push({ value: numeric, description: String(description || "") });
-  };
-
-  const inspectNode = (node) => {
-    if (!node || typeof node !== "object") return;
-
-    if (Array.isArray(node)) {
-      for (const item of node) inspectNode(item);
-      return;
-    }
-
-    const label = String(node?.type ?? node?.name ?? node?.metricType ?? node?.valueType ?? "");
-    if (looksLikeInNeedMetric(label)) {
-      addCandidate(node?.value ?? node?.amount ?? node?.total ?? node?.count ?? node?.number, node?.description || label);
-    }
-
-    for (const child of Object.values(node)) {
-      if (child && typeof child === "object") inspectNode(child);
-    }
-  };
-
-  const attachmentGroups = [
-    json?.data?.attachments,
-    json?.attachments,
-    json?.data?.value?.attachments,
-    json?.data?.plan?.attachments
-  ].filter(Array.isArray).flat();
-
-  for (const attachment of attachmentGroups) {
-    const totals = attachment?.attachmentVersion?.value?.metrics?.values?.totals;
-    if (Array.isArray(totals)) {
-      for (const total of totals) {
-        const label = String(total?.type ?? total?.name ?? total?.metricType ?? "");
-        if (looksLikeInNeedMetric(label)) {
-          addCandidate(total?.value ?? total?.amount ?? total?.total ?? total?.count ?? total?.number, total?.description || label);
-        }
-      }
-    }
-    inspectNode(attachment);
-  }
-
-  if (!candidates.length) {
-    inspectNode(json);
-  }
-
-  if (!candidates.length) return null;
-
-  candidates.sort((a, b) => b.value - a.value);
-  return candidates[0];
+  return null;
 }
 
 async function discoverOchaPlans() {
@@ -297,13 +244,14 @@ async function getOchaPIN(crisis, planId) {
   const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
   if (!json) return null;
 
-  const pin = extractPIN(json);
+  const pin = extractPIN(json, crisis.name);
   if (pin) {
     log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
+    return pin;
   } else {
     log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
   }
-  return pin;
+  return null;
 }
 
 function render() {
@@ -388,7 +336,7 @@ async function refresh() {
       if (!row) return null;
 
       row.peopleInNeed = pin.value;
-      row.source = `OCHA HPC · ${pin.description || "current plan"}`;
+      row.source = `OCHA HPC · current plan`;
       row.planId = planId;
       row.live = true;
       return crisis.id;
