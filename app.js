@@ -28,12 +28,6 @@ const DEFAULT_CHRISTIAN_PERCENTAGES = {
   YEM: 1.0
 };
 
-// HDX HAPI requires a free "app_identifier" on every request. It is not a
-// secret — it's just a base64-encoded "app_name:email" pair used so HDX can
-// see which applications are calling the API. Safe to ship in client code.
-const HDX_HAPI_APP_IDENTIFIER = btoa("humanitarian-crisis-dashboard:dashboard@example.org");
-const HDX_HAPI_BASE = "https://hapi.humdata.org/api/v2";
-
 const state = {
   crises: [],
   rows: [],
@@ -117,13 +111,13 @@ async function loadChristianPercentages() {
 
 function normalizeHapiCountryItem(item) {
   const iso3 = normalizeIso3(
-    item?.location_code || item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
+    item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
   );
   if (!iso3) return null;
 
-  const name = item?.location_name || item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
+  const name = item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
   const started = item?.start_date || item?.startDate || item?.started || item?.date || null;
-  const type = item?.crisis_type || item?.type || item?.category || (item?.has_hrp ? "Humanitarian Response Plan" : "Humanitarian emergency");
+  const type = item?.crisis_type || item?.type || item?.category || "Humanitarian emergency";
   const region = item?.region || item?.country_region || item?.country?.region || "Global";
 
   return {
@@ -145,14 +139,7 @@ async function getJSON(url, label) {
   const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     log(`Connecting to ${label}`);
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        "X-HDX-HAPI-APP-IDENTIFIER": HDX_HAPI_APP_IDENTIFIER
-      },
-      cache: "no-store",
-      signal: controller.signal
-    });
+    const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
     const json = await response.json();
     log(`${label} responded successfully`, "ok");
@@ -166,20 +153,16 @@ async function getJSON(url, label) {
 }
 
 async function fetchGlobalCrisisWatchlist() {
-  // HDX HAPI v2 metadata/locations with has_hrp=true returns every country
-  // that currently has an active Humanitarian Response Plan — this is the
-  // correct "active crisis watchlist" source (the old hdx_crisisdata_list
-  // CKAN action does not exist, which is why it previously failed).
-  const crisisEndpoint = `${HDX_HAPI_BASE}/metadata/locations?has_hrp=true&output_format=json&limit=100&app_identifier=${encodeURIComponent(HDX_HAPI_APP_IDENTIFIER)}`;
-  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises (metadata/locations)");
+  const crisisEndpoint = "https://api.humdata.org/api/3/action/hdx_crisisdata_list?active=True";
+  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises");
   if (!crisisJson) return FALLBACK_CRISIS_SEED;
 
   const rawList = Array.isArray(crisisJson)
     ? crisisJson
-    : Array.isArray(crisisJson?.data)
-      ? crisisJson.data
-      : Array.isArray(crisisJson?.result)
-        ? crisisJson.result
+    : Array.isArray(crisisJson?.result)
+      ? crisisJson.result
+      : Array.isArray(crisisJson?.data)
+        ? crisisJson.data
         : Array.isArray(crisisJson?.records)
           ? crisisJson.records
           : [];
@@ -217,61 +200,85 @@ function extractPlans(json) {
   return map;
 }
 
-function extractPIN(json, countryName = "") {
+function extractPIN(json) {
   if (!json) return null;
 
-  // Look for people in need in the attachments array (caseLoad type, inNeed metric)
-  const attachments = json?.data?.attachments || json?.attachments || [];
-  if (Array.isArray(attachments)) {
-    for (const attachment of attachments) {
-      // Caseload attachments contain population-based metrics
-      if (attachment?.type === "caseLoad" || attachment?.attachmentType === "caseLoad") {
-        const value = attachment?.attachmentVersion?.value?.metrics?.values?.total;
-        const numeric = Number(value);
-        if (Number.isFinite(numeric) && numeric > 0 && numeric < 1e12) {
-          log(`${countryName}: ${fmt(numeric)} people in need from caseLoad attachment`, "ok");
-          return { value: numeric, description: "caseload people in need" };
-        }
-      }
+  // The plan endpoint now puts the overall PIN in the plan version's details,
+  // rather than in an attachment metric total. Check that canonical location
+  // first so that a sector or demographic subtotal cannot be reported as PIN.
+  const planDetails = [
+    json?.data?.plan?.planVersion?.value?.planDetails,
+    json?.data?.planVersion?.value?.planDetails,
+    json?.data?.plan?.version?.value?.planDetails,
+    json?.data?.plan?.planDetails,
+    json?.data?.planDetails,
+    ...[json?.data?.attachments, json?.attachments]
+      .filter(Array.isArray)
+      .flatMap(attachments => attachments.map(attachment => attachment?.attachmentVersion?.value?.planDetails))
+  ];
+
+  for (const details of planDetails) {
+    if (!details || typeof details !== "object") continue;
+    const value = details.peopleInNeed ?? details.people_in_need ?? details.pin;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return { value: numeric, description: "overall people in need" };
     }
   }
 
-  // Fallback: scan for any metric with "in need" in the type
-  const inspectNode = (node, path = "") => {
-    if (!node || typeof node !== "object") return null;
+  const candidates = [];
 
-    if (Array.isArray(node)) {
-      for (let i = 0; i < node.length; i++) {
-        const result = inspectNode(node[i], `${path}[${i}]`);
-        if (result) return result;
-      }
-      return null;
-    }
-
-    const nodeType = String(node?.type ?? node?.metricType ?? "").toLowerCase();
-    if (nodeType.includes("inneed") || nodeType.includes("peopleneed")) {
-      const value = Number(node?.value ?? node?.amount ?? node?.total ?? node?.count);
-      if (Number.isFinite(value) && value > 0 && value < 1e12) {
-        log(`${countryName}: ${fmt(value)} people in need from metric: ${nodeType}`, "ok");
-        return { value, description: nodeType };
-      }
-    }
-
-    for (const [key, child] of Object.entries(node)) {
-      if (child && typeof child === "object") {
-        const result = inspectNode(child, path ? `${path}.${key}` : key);
-        if (result) return result;
-      }
-    }
-
-    return null;
+  const addCandidate = (value, description = "") => {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) candidates.push({ value: numeric, description: String(description || "") });
   };
 
-  const result = inspectNode(json);
-  if (result) return result;
+  const inspectNode = (node) => {
+    if (!node || typeof node !== "object") return;
 
-  log(`${countryName}: OCHA responded but no people in need metric was found in attachments`, "bad");
-  return null;
+    if (Array.isArray(node)) {
+      for (const item of node) inspectNode(item);
+      return;
+    }
+
+    const label = String(node?.type ?? node?.name ?? node?.metricType ?? node?.valueType ?? "");
+    if (looksLikeInNeedMetric(label)) {
+      addCandidate(node?.value ?? node?.amount ?? node?.total ?? node?.count ?? node?.number, node?.description || label);
+    }
+
+    for (const child of Object.values(node)) {
+      if (child && typeof child === "object") inspectNode(child);
+    }
+  };
+
+  const attachmentGroups = [
+    json?.data?.attachments,
+    json?.attachments,
+    json?.data?.value?.attachments,
+    json?.data?.plan?.attachments
+  ].filter(Array.isArray).flat();
+
+  for (const attachment of attachmentGroups) {
+    const totals = attachment?.attachmentVersion?.value?.metrics?.values?.totals;
+    if (Array.isArray(totals)) {
+      for (const total of totals) {
+        const label = String(total?.type ?? total?.name ?? total?.metricType ?? "");
+        if (looksLikeInNeedMetric(label)) {
+          addCandidate(total?.value ?? total?.amount ?? total?.total ?? total?.count ?? total?.number, total?.description || label);
+        }
+      }
+    }
+    inspectNode(attachment);
+  }
+
+  if (!candidates.length) {
+    inspectNode(json);
+  }
+
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => b.value - a.value);
+  return candidates[0];
 }
 
 async function discoverOchaPlans() {
@@ -286,12 +293,16 @@ async function discoverOchaPlans() {
 }
 
 async function getOchaPIN(crisis, planId) {
-  // Include ?content=entities to load the attachments array with caseload metrics
-  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}?content=entities`;
+  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
   const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
   if (!json) return null;
 
-  const pin = extractPIN(json, crisis.name);
+  const pin = extractPIN(json);
+  if (pin) {
+    log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
+  } else {
+    log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
+  }
   return pin;
 }
 
@@ -335,7 +346,7 @@ function render() {
         <div class="muted">Evidence <strong>${esc(r.christianEvidence)}</strong></div>
       </div>
       <div class="sources">
-        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}?content=entities" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
+        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
         ${r.sourceLinks.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])} ↗</a>`).join("")}
       </div>
     </article>
