@@ -28,6 +28,12 @@ const DEFAULT_CHRISTIAN_PERCENTAGES = {
   YEM: 1.0
 };
 
+// HDX HAPI requires a free "app_identifier" on every request. It is not a
+// secret — it's just a base64-encoded "app_name:email" pair used so HDX can
+// see which applications are calling the API. Safe to ship in client code.
+const HDX_HAPI_APP_IDENTIFIER = btoa("humanitarian-crisis-dashboard:dashboard@example.org");
+const HDX_HAPI_BASE = "https://hapi.humdata.org/api/v2";
+
 const state = {
   crises: [],
   rows: [],
@@ -111,13 +117,13 @@ async function loadChristianPercentages() {
 
 function normalizeHapiCountryItem(item) {
   const iso3 = normalizeIso3(
-    item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
+    item?.location_code || item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
   );
   if (!iso3) return null;
 
-  const name = item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
+  const name = item?.location_name || item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
   const started = item?.start_date || item?.startDate || item?.started || item?.date || null;
-  const type = item?.crisis_type || item?.type || item?.category || "Humanitarian emergency";
+  const type = item?.crisis_type || item?.type || item?.category || (item?.has_hrp ? "Humanitarian Response Plan" : "Humanitarian emergency");
   const region = item?.region || item?.country_region || item?.country?.region || "Global";
 
   return {
@@ -139,7 +145,14 @@ async function getJSON(url, label) {
   const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     log(`Connecting to ${label}`);
-    const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "X-HDX-HAPI-APP-IDENTIFIER": HDX_HAPI_APP_IDENTIFIER
+      },
+      cache: "no-store",
+      signal: controller.signal
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
     const json = await response.json();
     log(`${label} responded successfully`, "ok");
@@ -153,16 +166,20 @@ async function getJSON(url, label) {
 }
 
 async function fetchGlobalCrisisWatchlist() {
-  const crisisEndpoint = "https://api.humdata.org/api/3/action/hdx_crisisdata_list?active=True";
-  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises");
+  // HDX HAPI v2 metadata/locations with has_hrp=true returns every country
+  // that currently has an active Humanitarian Response Plan — this is the
+  // correct "active crisis watchlist" source (the old hdx_crisisdata_list
+  // CKAN action does not exist, which is why it previously failed).
+  const crisisEndpoint = `${HDX_HAPI_BASE}/metadata/locations?has_hrp=true&output_format=json&limit=100&app_identifier=${encodeURIComponent(HDX_HAPI_APP_IDENTIFIER)}`;
+  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises (metadata/locations)");
   if (!crisisJson) return FALLBACK_CRISIS_SEED;
 
   const rawList = Array.isArray(crisisJson)
     ? crisisJson
-    : Array.isArray(crisisJson?.result)
-      ? crisisJson.result
-      : Array.isArray(crisisJson?.data)
-        ? crisisJson.data
+    : Array.isArray(crisisJson?.data)
+      ? crisisJson.data
+      : Array.isArray(crisisJson?.result)
+        ? crisisJson.result
         : Array.isArray(crisisJson?.records)
           ? crisisJson.records
           : [];
