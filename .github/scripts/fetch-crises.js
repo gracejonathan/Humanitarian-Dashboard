@@ -24,6 +24,182 @@ const FALLBACK_CRISIS_SEED = [
   { id: "haiti", name: "Haiti", iso3: "HTI", region: "Caribbean", type: "Complex emergency / insecurity", started: "2020-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/hti"], ["HDX", "https://data.humdata.org/country/hti"]] }
 ];
 
+// Hardcoded country ISO3 to region mapping
+const COUNTRY_REGIONS = {
+  'AFG': 'South Asia',
+  'BGD': 'South Asia',
+  'BTN': 'South Asia',
+  'IND': 'South Asia',
+  'LKA': 'South Asia',
+  'MDV': 'South Asia',
+  'NPL': 'South Asia',
+  'PAK': 'South Asia',
+  'CHN': 'East Asia',
+  'HKG': 'East Asia',
+  'JPN': 'East Asia',
+  'KOR': 'East Asia',
+  'MNG': 'East Asia',
+  'PRK': 'East Asia',
+  'TWN': 'East Asia',
+  'BRN': 'Southeast Asia',
+  'KHM': 'Southeast Asia',
+  'IDN': 'Southeast Asia',
+  'LAO': 'Southeast Asia',
+  'MYS': 'Southeast Asia',
+  'MMR': 'Southeast Asia',
+  'PHL': 'Southeast Asia',
+  'SGP': 'Southeast Asia',
+  'THA': 'Southeast Asia',
+  'TLS': 'Southeast Asia',
+  'VNM': 'Southeast Asia',
+  'ARM': 'Caucasus',
+  'AZE': 'Caucasus',
+  'GEO': 'Caucasus',
+  'BLR': 'Europe',
+  'BGR': 'Europe',
+  'HRV': 'Europe',
+  'CZE': 'Europe',
+  'DNK': 'Europe',
+  'EST': 'Europe',
+  'FIN': 'Europe',
+  'FRA': 'Europe',
+  'DEU': 'Europe',
+  'GRC': 'Europe',
+  'HUN': 'Europe',
+  'IRL': 'Europe',
+  'ITA': 'Europe',
+  'LVA': 'Europe',
+  'LTU': 'Europe',
+  'LUX': 'Europe',
+  'MLT': 'Europe',
+  'NLD': 'Europe',
+  'POL': 'Europe',
+  'PRT': 'Europe',
+  'ROU': 'Europe',
+  'RUS': 'Europe',
+  'SVK': 'Europe',
+  'SVN': 'Europe',
+  'ESP': 'Europe',
+  'SWE': 'Europe',
+  'CHE': 'Europe',
+  'UKR': 'Europe',
+  'GBR': 'Europe',
+  'BHR': 'Middle East',
+  'EGY': 'Middle East',
+  'IRN': 'Middle East',
+  'IRQ': 'Middle East',
+  'ISR': 'Middle East',
+  'JOR': 'Middle East',
+  'KWT': 'Middle East',
+  'LBN': 'Middle East',
+  'OMN': 'Middle East',
+  'PSE': 'Middle East',
+  'QAT': 'Middle East',
+  'SAU': 'Middle East',
+  'SYR': 'Middle East',
+  'ARE': 'Middle East',
+  'YEM': 'Middle East',
+  'DZA': 'North Africa',
+  'LBY': 'North Africa',
+  'MAR': 'North Africa',
+  'TUN': 'North Africa',
+  'AGO': 'Central Africa',
+  'CMR': 'Central Africa',
+  'CAF': 'Central Africa',
+  'TCD': 'Central Africa',
+  'COG': 'Central Africa',
+  'COD': 'Central Africa',
+  'GAB': 'Central Africa',
+  'GNQ': 'Central Africa',
+  'STP': 'Central Africa',
+  'BWA': 'Southern Africa',
+  'LSO': 'Southern Africa',
+  'NAM': 'Southern Africa',
+  'ZAF': 'Southern Africa',
+  'SWZ': 'Southern Africa',
+  'BDI': 'East Africa',
+  'KMR': 'East Africa',
+  'DJI': 'East Africa',
+  'ERI': 'East Africa',
+  'ETH': 'East Africa',
+  'KEN': 'East Africa',
+  'MDG': 'East Africa',
+  'MWI': 'East Africa',
+  'MOZ': 'East Africa',
+  'RWA': 'East Africa',
+  'SOM': 'Horn of Africa',
+  'SSD': 'East Africa',
+  'TZA': 'East Africa',
+  'UGA': 'East Africa',
+  'ZMB': 'East Africa',
+  'ZWE': 'East Africa',
+  'BEN': 'West Africa',
+  'BFA': 'West Africa',
+  'CPV': 'West Africa',
+  'CIV': 'West Africa',
+  'GMB': 'West Africa',
+  'GHA': 'West Africa',
+  'GIN': 'West Africa',
+  'GNB': 'West Africa',
+  'LBR': 'West Africa',
+  'MLI': 'West Africa',
+  'MRT': 'West Africa',
+  'NER': 'West Africa',
+  'NGA': 'West Africa',
+  'SEN': 'West Africa',
+  'SLE': 'West Africa',
+  'TGO': 'West Africa',
+  'ABW': 'Caribbean',
+  'BHS': 'Caribbean',
+  'BRB': 'Caribbean',
+  'CUB': 'Caribbean',
+  'CUW': 'Caribbean',
+  'DMA': 'Caribbean',
+  'DOM': 'Caribbean',
+  'SXM': 'Caribbean',
+  'GRD': 'Caribbean',
+  'GTM': 'Caribbean',
+  'HTI': 'Caribbean',
+  'JAM': 'Caribbean',
+  'PRI': 'Caribbean',
+  'BLZ': 'Central America',
+  'CRI': 'Central America',
+  'SLV': 'Central America',
+  'HND': 'Central America',
+  'NIC': 'Central America',
+  'PAN': 'Central America',
+  'ARG': 'South America',
+  'BOL': 'South America',
+  'BRA': 'South America',
+  'CHL': 'South America',
+  'COL': 'South America',
+  'ECU': 'South America',
+  'GUY': 'South America',
+  'PRY': 'South America',
+  'PER': 'South America',
+  'SUR': 'South America',
+  'URY': 'South America',
+  'VEN': 'South America',
+  'ATF': 'Antarctica',
+  'AUS': 'Oceania',
+  'FJI': 'Oceania',
+  'KIR': 'Oceania',
+  'MHL': 'Oceania',
+  'FSM': 'Oceania',
+  'NRU': 'Oceania',
+  'NZL': 'Oceania',
+  'PLW': 'Oceania',
+  'PNG': 'Oceania',
+  'WSM': 'Oceania',
+  'SLB': 'Oceania',
+  'TON': 'Oceania',
+  'TUV': 'Oceania',
+  'VUT': 'Oceania',
+  'CAN': 'North America',
+  'MEX': 'North America',
+  'USA': 'North America'
+};
+
 async function fetchJSON(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'Humanitarian-Dashboard/1.0' } }, (res) => {
@@ -41,7 +217,6 @@ async function fetchJSON(url) {
 }
 
 async function fetchCrises() {
-  // Try the disasters endpoint first
   const appname = 'humanitarian-dashboard';
   const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=100`;
 
@@ -49,12 +224,8 @@ async function fetchCrises() {
 
   try {
     const json = await fetchJSON(url);
-    console.log(`[fetch-crises] Raw response keys: ${Object.keys(json || {}).join(', ')}`);
-    console.log(`[fetch-crises] Response has ${json?.data?.length || 0} items`);
-
     if (!json || !json.data || !Array.isArray(json.data)) {
-      console.log('[fetch-crises] Invalid response structure; checking structure:', JSON.stringify(json || {}, null, 2).substring(0, 500));
-      console.log('[fetch-crises] Using fallback');
+      console.log('[fetch-crises] Invalid response structure; using fallback');
       return FALLBACK_CRISIS_SEED;
     }
 
@@ -64,13 +235,20 @@ async function fetchCrises() {
       .map((item, idx) => {
         const fields = item?.fields || {};
         const name = fields?.name || 'Unknown Crisis';
-        const iso3 = (fields?.primary_country?.iso3 || '').toUpperCase();
-        const started = fields?.date?.created || fields?.date?.start || null;
+        
+        // ReliefWeb returns 'country' as an array, get the first country's ISO3
+        let iso3 = '';
+        if (Array.isArray(fields?.country) && fields.country.length > 0) {
+          iso3 = fields.country[0]?.iso3 || '';
+        }
+        iso3 = iso3.toUpperCase();
+        
+        const started = fields?.date?.start || fields?.date?.created || null;
         const type = fields?.type?.[0]?.name || 'Humanitarian emergency';
-        const region = fields?.primary_country?.region?.name || 'Global';
+        const region = COUNTRY_REGIONS[iso3] || 'Global';
 
-        if (idx < 3) {
-          console.log(`[fetch-crises] Item ${idx}: name="${name}", iso3="${iso3}", type="${type}"`);
+        if (idx < 5) {
+          console.log(`[fetch-crises] Item ${idx}: name="${name}", iso3="${iso3}", region="${region}", type="${type}"`);
         }
 
         return {
@@ -86,14 +264,11 @@ async function fetchCrises() {
           sourceLinks: [['ReliefWeb', `https://reliefweb.int/disasters/${item?.id || ''}`], ['ReliefWeb Map', 'https://reliefweb.int/map']]
         };
       })
-      .filter(crisis => {
-        const keep = crisis.iso3 !== 'UNK';
-        return keep;
-      });
+      .filter(crisis => crisis.iso3 !== 'UNK');
 
     console.log(`[fetch-crises] After filtering for valid ISO3: ${normalized.length} crises`);
     normalized.slice(0, 5).forEach((c, i) => {
-      console.log(`[fetch-crises] Valid crisis ${i}: ${c.name} (${c.iso3})`);
+      console.log(`[fetch-crises] Valid crisis ${i}: ${c.name} (${c.iso3}) - ${c.region}`);
     });
 
     if (normalized.length === 0) {
@@ -105,7 +280,6 @@ async function fetchCrises() {
     return normalized;
   } catch (error) {
     console.error(`[fetch-crises] Error fetching from ReliefWeb: ${error.message}`);
-    console.error(`[fetch-crises] Stack: ${error.stack}`);
     console.log('[fetch-crises] Using fallback crisis seed');
     return FALLBACK_CRISIS_SEED;
   }
