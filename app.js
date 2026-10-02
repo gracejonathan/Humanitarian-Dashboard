@@ -35,6 +35,7 @@ const state = {
   liveCount: 0,
   dataSource: "unknown",
   lastFetch: null,
+  limit: 12,
   christianPercentByIso3: { ...DEFAULT_CHRISTIAN_PERCENTAGES }
 };
 
@@ -123,6 +124,46 @@ async function loadCrisesFromFile() {
   }
 }
 
+function updateLimitOptions() {
+  const totalCrises = state.rows.length;
+  const limitSelect = $("limit");
+  
+  // Clear existing options
+  limitSelect.innerHTML = "";
+  
+  // Always show 12
+  const opt12 = document.createElement("option");
+  opt12.value = "12";
+  opt12.textContent = `12 crises`;
+  limitSelect.appendChild(opt12);
+  
+  // Show 25 if we have more than 12
+  if (totalCrises > 12) {
+    const opt25 = document.createElement("option");
+    opt25.value = "25";
+    opt25.textContent = `25 crises`;
+    limitSelect.appendChild(opt25);
+  }
+  
+  // Show 50 if we have more than 25
+  if (totalCrises > 25) {
+    const opt50 = document.createElement("option");
+    opt50.value = "50";
+    opt50.textContent = `50 crises`;
+    limitSelect.appendChild(opt50);
+  }
+  
+  // Show "All" if we have more than 50
+  if (totalCrises > 50) {
+    const optAll = document.createElement("option");
+    optAll.value = totalCrises;
+    optAll.textContent = `All (${totalCrises} crises)`;
+    limitSelect.appendChild(optAll);
+  }
+  
+  limitSelect.value = state.limit;
+}
+
 function render() {
   const q = $("search").value.toLowerCase();
   const p = $("presence").value;
@@ -140,12 +181,15 @@ function render() {
     return (b.peopleInNeed ?? -1) - (a.peopleInNeed ?? -1);
   });
 
+  // Apply limit
+  const limited = rows.slice(0, state.limit);
+
   const total = state.rows.reduce((sum, r) => sum + (r.peopleInNeed || 0), 0);
   $("totalNeed").textContent = total ? compact(total) : "—";
   $("recordCount").textContent = state.rows.length;
   $("liveCount").textContent = state.liveCount;
 
-  $("crisisGrid").innerHTML = rows.length ? rows.map(r => `
+  $("crisisGrid").innerHTML = limited.length ? limited.map(r => `
     <article class="card">
       <div class="card-head">
         <div>
@@ -167,6 +211,13 @@ function render() {
       </div>
     </article>
   `).join("") : "<p>No matching crises.</p>";
+  
+  // Show results info
+  $("resultsInfo").textContent = rows.length > state.limit 
+    ? `Showing ${limited.length} of ${rows.length} matching crises`
+    : rows.length > 0
+    ? `Showing all ${rows.length} matching crises`
+    : "No crises match your filters";
 }
 
 async function refresh() {
@@ -198,6 +249,10 @@ async function refresh() {
   }));
   state.rowById = new Map(state.rows.map(row => [row.id, row]));
   state.liveCount = state.rows.filter(row => row.live).length;
+  
+  // Update limit options based on total crises count
+  updateLimitOptions();
+  
   render();
   log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
 
@@ -216,6 +271,10 @@ async function refresh() {
 }
 
 $("refreshBtn").addEventListener("click", refresh);
+$("limit").addEventListener("change", (e) => {
+  state.limit = parseInt(e.target.value, 10);
+  render();
+});
 ["search", "presence", "sort"].forEach(id => $(id).addEventListener("input", () => render()));
 refresh();
 // Re-check for updates every 6 hours
