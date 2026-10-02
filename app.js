@@ -74,28 +74,13 @@ function normalizeIso3(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
-function collectAllNumbers(value, path = "", results = []) {
-  if (value == null) return results;
-
-  if (Array.isArray(value)) {
-    for (let i = 0; i < value.length; i++) {
-      collectAllNumbers(value[i], `${path}[${i}]`, results);
-    }
-    return results;
-  }
-
-  if (typeof value === "object") {
-    for (const [key, child] of Object.entries(value)) {
-      const newPath = path ? `${path}.${key}` : key;
-      if (typeof child === "number" && Number.isFinite(child) && child > 0 && child < 1e12) {
-        results.push({ value: child, path: newPath, key });
-      }
-      collectAllNumbers(child, newPath, results);
-    }
-    return results;
-  }
-
-  return results;
+function looksLikeInNeedMetric(value) {
+  const label = String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return label.includes("inneed") ||
+    label.includes("peopleinneed") ||
+    label.includes("personsinneed") ||
+    label.includes("peopleneed") ||
+    label.includes("pin");
 }
 
 async function loadChristianPercentages() {
@@ -218,13 +203,57 @@ function extractPlans(json) {
 function extractPIN(json, countryName = "") {
   if (!json) return null;
 
-  const allNumbers = collectAllNumbers(json);
-  if (allNumbers.length > 0) {
-    allNumbers.sort((a, b) => b.value - a.value);
-    log(`${countryName}: found ${allNumbers.length} total numeric values. Top 5: ${allNumbers.slice(0, 5).map(n => `${fmt(n.value)} @ ${n.path}`).join(" | ")}`, "wait");
-    return allNumbers[0];
+  // Look for people in need in the attachments array (caseLoad type, inNeed metric)
+  const attachments = json?.data?.attachments || json?.attachments || [];
+  if (Array.isArray(attachments)) {
+    for (const attachment of attachments) {
+      // Caseload attachments contain population-based metrics
+      if (attachment?.type === "caseLoad" || attachment?.attachmentType === "caseLoad") {
+        const value = attachment?.attachmentVersion?.value?.metrics?.values?.total;
+        const numeric = Number(value);
+        if (Number.isFinite(numeric) && numeric > 0 && numeric < 1e12) {
+          log(`${countryName}: ${fmt(numeric)} people in need from caseLoad attachment`, "ok");
+          return { value: numeric, description: "caseload people in need" };
+        }
+      }
+    }
   }
 
+  // Fallback: scan for any metric with "in need" in the type
+  const inspectNode = (node, path = "") => {
+    if (!node || typeof node !== "object") return null;
+
+    if (Array.isArray(node)) {
+      for (let i = 0; i < node.length; i++) {
+        const result = inspectNode(node[i], `${path}[${i}]`);
+        if (result) return result;
+      }
+      return null;
+    }
+
+    const nodeType = String(node?.type ?? node?.metricType ?? "").toLowerCase();
+    if (nodeType.includes("inneed") || nodeType.includes("peopleneed")) {
+      const value = Number(node?.value ?? node?.amount ?? node?.total ?? node?.count);
+      if (Number.isFinite(value) && value > 0 && value < 1e12) {
+        log(`${countryName}: ${fmt(value)} people in need from metric: ${nodeType}`, "ok");
+        return { value, description: nodeType };
+      }
+    }
+
+    for (const [key, child] of Object.entries(node)) {
+      if (child && typeof child === "object") {
+        const result = inspectNode(child, path ? `${path}.${key}` : key);
+        if (result) return result;
+      }
+    }
+
+    return null;
+  };
+
+  const result = inspectNode(json);
+  if (result) return result;
+
+  log(`${countryName}: OCHA responded but no people in need metric was found in attachments`, "bad");
   return null;
 }
 
@@ -240,18 +269,13 @@ async function discoverOchaPlans() {
 }
 
 async function getOchaPIN(crisis, planId) {
-  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
+  // Include ?content=entities to load the attachments array with caseload metrics
+  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}?content=entities`;
   const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
   if (!json) return null;
 
   const pin = extractPIN(json, crisis.name);
-  if (pin) {
-    log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
-    return pin;
-  } else {
-    log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
-  }
-  return null;
+  return pin;
 }
 
 function render() {
@@ -294,7 +318,7 @@ function render() {
         <div class="muted">Evidence <strong>${esc(r.christianEvidence)}</strong></div>
       </div>
       <div class="sources">
-        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
+        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}?content=entities" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
         ${r.sourceLinks.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])} ↗</a>`).join("")}
       </div>
     </article>
@@ -336,7 +360,7 @@ async function refresh() {
       if (!row) return null;
 
       row.peopleInNeed = pin.value;
-      row.source = `OCHA HPC · current plan`;
+      row.source = `OCHA HPC · ${pin.description || "current plan"}`;
       row.planId = planId;
       row.live = true;
       return crisis.id;
