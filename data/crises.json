@@ -1,128 +1,257 @@
-[
-  {
-    "id": "sudan",
-    "name": "Sudan",
-    "iso3": "SDN",
-    "region": "East Africa",
-    "type": "Conflict",
-    "started": "2023-04-15",
-    "christianPresence": "documented",
-    "christianLabel": "Documented minority presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/sdn"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/sdn"
+{
+  "crises": [
+    {
+      "id": "sudan",
+      "name": "Sudan",
+      "iso3": "SDN",
+      "region": "East Africa",
+      "type": "Conflict / displacement",
+      "started": "2023-04-15",
+      "christianPresence": "documented",
+      "christianLabel": "Documented minority presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/sdn"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/sdn"
+        ]
       ]
-    ]
-  },
-  {
-    "id": "afghanistan",
-    "name": "Afghanistan",
-    "iso3": "AFG",
-    "region": "South Asia",
-    "type": "Protracted crisis",
-    "started": "1978-04-27",
-    "christianPresence": "limited",
-    "christianLabel": "Small / limited presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/afg"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/afg"
+    },
+    {
+      "id": "afghanistan",
+      "name": "Afghanistan",
+      "iso3": "AFG",
+      "region": "South Asia",
+      "type": "Protracted crisis",
+      "started": "1978-04-27",
+      "christianPresence": "limited",
+      "christianLabel": "Small / limited presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/afg"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/afg"
+        ]
       ]
-    ]
-  },
-  {
-    "id": "syria",
-    "name": "Syria",
-    "iso3": "SYR",
-    "region": "Middle East",
-    "type": "Conflict / displacement",
-    "started": "2011-03-15",
-    "christianPresence": "documented",
-    "christianLabel": "Documented minority presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/syr"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/syr"
+    },
+    {
+      "id": "syria",
+      "name": "Syria",
+      "iso3": "SYR",
+      "region": "Middle East",
+      "type": "Conflict / displacement",
+      "started": "2011-03-15",
+      "christianPresence": "documented",
+      "christianLabel": "Documented minority presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/syr"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/syr"
+        ]
       ]
-    ]
-  },
-  {
-    "id": "drc",
-    "name": "Democratic Republic of the Congo",
-    "iso3": "COD",
-    "region": "Central Africa",
-    "type": "Conflict / displacement",
-    "started": "1996-10-24",
-    "christianPresence": "documented",
-    "christianLabel": "Large Christian presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/cod"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/cod"
+    },
+    {
+      "id": "drc",
+      "name": "Democratic Republic of the Congo",
+      "iso3": "COD",
+      "region": "Central Africa",
+      "type": "Conflict / displacement",
+      "started": "1996-10-24",
+      "christianPresence": "documented",
+      "christianLabel": "Large Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/cod"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/cod"
+        ]
       ]
-    ]
-  },
-  {
-    "id": "ukraine",
-    "name": "Ukraine",
-    "iso3": "UKR",
-    "region": "Europe",
-    "type": "International armed conflict",
-    "started": "2022-02-24",
-    "christianPresence": "documented",
-    "christianLabel": "Established Christian presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/ukr"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/ukr"
+    },
+    {
+      "id": "ukraine",
+      "name": "Ukraine",
+      "iso3": "UKR",
+      "region": "Europe",
+      "type": "International armed conflict",
+      "started": "2022-02-24",
+      "christianPresence": "documented",
+      "christianLabel": "Established Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/ukr"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/ukr"
+        ]
       ]
-    ]
-  },
-  {
-    "id": "yemen",
-    "name": "Yemen",
-    "iso3": "YEM",
-    "region": "Middle East",
-    "type": "Conflict / food insecurity",
-    "started": "2014-09-21",
-    "christianPresence": "limited",
-    "christianLabel": "Very small / restricted presence",
-    "christianEvidence": "Curated country-level evidence; requires periodic verification",
-    "sourceLinks": [
-      [
-        "ReliefWeb",
-        "https://reliefweb.int/country/yem"
-      ],
-      [
-        "HDX",
-        "https://data.humdata.org/country/yem"
+    },
+    {
+      "id": "yemen",
+      "name": "Yemen",
+      "iso3": "YEM",
+      "region": "Middle East",
+      "type": "Conflict / food insecurity",
+      "started": "2014-09-21",
+      "christianPresence": "limited",
+      "christianLabel": "Very small / restricted presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/yem"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/yem"
+        ]
       ]
-    ]
-  }
-]
+    },
+    {
+      "id": "palestine",
+      "name": "Occupied Palestinian Territory",
+      "iso3": "PSE",
+      "region": "Middle East",
+      "type": "Conflict / humanitarian emergency",
+      "started": "2023-10-07",
+      "christianPresence": "documented",
+      "christianLabel": "Documented Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/pse"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/pse"
+        ]
+      ]
+    },
+    {
+      "id": "myanmar",
+      "name": "Myanmar",
+      "iso3": "MMR",
+      "region": "Southeast Asia",
+      "type": "Conflict / displacement",
+      "started": "2021-02-01",
+      "christianPresence": "documented",
+      "christianLabel": "Documented Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/mmr"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/mmr"
+        ]
+      ]
+    },
+    {
+      "id": "somalia",
+      "name": "Somalia",
+      "iso3": "SOM",
+      "region": "Horn of Africa",
+      "type": "Drought / displacement / conflict",
+      "started": "2011-01-01",
+      "christianPresence": "documented",
+      "christianLabel": "Small documented community",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/som"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/som"
+        ]
+      ]
+    },
+    {
+      "id": "ethiopia",
+      "name": "Ethiopia",
+      "iso3": "ETH",
+      "region": "East Africa",
+      "type": "Conflict / drought / displacement",
+      "started": "2020-11-01",
+      "christianPresence": "documented",
+      "christianLabel": "Large Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/eth"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/eth"
+        ]
+      ]
+    },
+    {
+      "id": "nigeria",
+      "name": "Nigeria",
+      "iso3": "NGA",
+      "region": "West Africa",
+      "type": "Conflict / displacement",
+      "started": "2009-01-01",
+      "christianPresence": "documented",
+      "christianLabel": "Large Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/nga"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/nga"
+        ]
+      ]
+    },
+    {
+      "id": "haiti",
+      "name": "Haiti",
+      "iso3": "HTI",
+      "region": "Caribbean",
+      "type": "Complex emergency / insecurity",
+      "started": "2020-01-01",
+      "christianPresence": "documented",
+      "christianLabel": "Large Christian presence",
+      "christianEvidence": "Curated country-level evidence; requires periodic verification",
+      "sourceLinks": [
+        [
+          "ReliefWeb",
+          "https://reliefweb.int/country/hti"
+        ],
+        [
+          "HDX",
+          "https://data.humdata.org/country/hti"
+        ]
+      ]
+    }
+  ],
+  "timestamp": "2026-10-02T01:35:35.531Z"
+}
