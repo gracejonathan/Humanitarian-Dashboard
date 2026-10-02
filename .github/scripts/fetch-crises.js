@@ -26,7 +26,7 @@ const FALLBACK_CRISIS_SEED = [
 
 async function fetchJSON(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'Accept': 'application/json' } }, (res) => {
+    https.get(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'Humanitarian-Dashboard/1.0' } }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
@@ -41,6 +41,7 @@ async function fetchJSON(url) {
 }
 
 async function fetchCrises() {
+  // Try the disasters endpoint first
   const appname = 'humanitarian-dashboard';
   const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=100`;
 
@@ -48,19 +49,29 @@ async function fetchCrises() {
 
   try {
     const json = await fetchJSON(url);
+    console.log(`[fetch-crises] Raw response keys: ${Object.keys(json || {}).join(', ')}`);
+    console.log(`[fetch-crises] Response has ${json?.data?.length || 0} items`);
+
     if (!json || !json.data || !Array.isArray(json.data)) {
-      console.log('[fetch-crises] Invalid response structure; using fallback');
+      console.log('[fetch-crises] Invalid response structure; checking structure:', JSON.stringify(json || {}, null, 2).substring(0, 500));
+      console.log('[fetch-crises] Using fallback');
       return FALLBACK_CRISIS_SEED;
     }
 
+    console.log(`[fetch-crises] API returned ${json.data.length} items`);
+
     const normalized = json.data
-      .map(item => {
+      .map((item, idx) => {
         const fields = item?.fields || {};
         const name = fields?.name || 'Unknown Crisis';
         const iso3 = (fields?.primary_country?.iso3 || '').toUpperCase();
         const started = fields?.date?.created || fields?.date?.start || null;
         const type = fields?.type?.[0]?.name || 'Humanitarian emergency';
         const region = fields?.primary_country?.region?.name || 'Global';
+
+        if (idx < 3) {
+          console.log(`[fetch-crises] Item ${idx}: name="${name}", iso3="${iso3}", type="${type}"`);
+        }
 
         return {
           id: (iso3 || name).toLowerCase().replace(/\s+/g, '-'),
@@ -75,17 +86,26 @@ async function fetchCrises() {
           sourceLinks: [['ReliefWeb', `https://reliefweb.int/disasters/${item?.id || ''}`], ['ReliefWeb Map', 'https://reliefweb.int/map']]
         };
       })
-      .filter(crisis => crisis.iso3 !== 'UNK');
+      .filter(crisis => {
+        const keep = crisis.iso3 !== 'UNK';
+        return keep;
+      });
+
+    console.log(`[fetch-crises] After filtering for valid ISO3: ${normalized.length} crises`);
+    normalized.slice(0, 5).forEach((c, i) => {
+      console.log(`[fetch-crises] Valid crisis ${i}: ${c.name} (${c.iso3})`);
+    });
 
     if (normalized.length === 0) {
-      console.log('[fetch-crises] No crises with ISO3 codes; using fallback');
+      console.log('[fetch-crises] No crises with ISO3 codes found in response; using fallback');
       return FALLBACK_CRISIS_SEED;
     }
 
-    console.log(`[fetch-crises] Fetched ${normalized.length} live crises from ReliefWeb (returning all)`);
+    console.log(`[fetch-crises] Successfully fetched ${normalized.length} live crises from ReliefWeb`);
     return normalized;
   } catch (error) {
     console.error(`[fetch-crises] Error fetching from ReliefWeb: ${error.message}`);
+    console.error(`[fetch-crises] Stack: ${error.stack}`);
     console.log('[fetch-crises] Using fallback crisis seed');
     return FALLBACK_CRISIS_SEED;
   }
