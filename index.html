@@ -1,29 +1,471 @@
-<section class="toolbar">
-
-  <input
-    id="search"
-    type="search"
-    placeholder="Search country or ISO code"
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
   >
 
-  <button
-    id="clearSearch"
-    type="button"
+  <meta
+    name="description"
+    content="Global humanitarian crisis dashboard using public humanitarian data from OCHA, HDX and World Religion Database."
   >
-    Clear
-  </button>
 
-  <select id="presence">
-    <option value="">All Christian-presence evidence</option>
-    <option value="documented">Documented presence</option>
-    <option value="limited">Small / limited presence</option>
-    <option value="unknown">Evidence not established</option>
-  </select>
+  <title>Global Humanitarian Crisis Dashboard</title>
 
-  <select id="sort">
-    <option value="need">People in need ↓</option>
-    <option value="name">Country A–Z</option>
-    <option value="start">Crisis start</option>
-  </select>
+  <link rel="stylesheet" href="styles.css">
+</head>
 
-</section>
+<body>
+
+  <!-- ======================================================
+       HEADER
+       ====================================================== -->
+
+  <header class="hero">
+
+    <div class="wrap">
+
+      <div class="eyebrow">
+        HUMANITARIAN INTELLIGENCE · PUBLIC DATA
+      </div>
+
+      <h1>
+        Global Crisis Dashboard
+      </h1>
+
+      <p>
+        A continuously refreshed view of humanitarian need,
+        crisis chronology, and the Christian population context
+        in countries reporting significant humanitarian need.
+      </p>
+
+      <div
+        id="connectionStatus"
+        class="status status-wait"
+        aria-live="polite"
+      >
+        Connecting to humanitarian data…
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- ======================================================
+       MAIN
+       ====================================================== -->
+
+  <main class="wrap">
+
+
+    <!-- ====================================================
+         LIVE DATA MONITOR
+         ==================================================== -->
+
+    <section class="connection-panel">
+
+      <div class="section-title">
+
+        <div>
+
+          <div class="eyebrow">
+            LIVE DATA MONITOR
+          </div>
+
+          <h2>
+            Current data connections
+          </h2>
+
+        </div>
+
+        <button
+          id="refreshBtn"
+          type="button"
+        >
+          Refresh now
+        </button>
+
+      </div>
+
+
+      <div
+        id="connectionLog"
+        class="log"
+        aria-live="polite"
+      ></div>
+
+    </section>
+
+
+    <!-- ====================================================
+         SUMMARY
+         ==================================================== -->
+
+    <section class="stats">
+
+      <div class="stat">
+
+        <span>
+          People in need
+        </span>
+
+        <strong id="totalNeed">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="stat">
+
+        <span>
+          Countries with PIN data
+        </span>
+
+        <strong id="recordCount">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="stat">
+
+        <span>
+          Live HAPI records
+        </span>
+
+        <strong id="liveCount">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="stat">
+
+        <span>
+          Last refresh
+        </span>
+
+        <strong id="lastRefresh">
+          —
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         FILTERS
+         ==================================================== -->
+
+    <section class="toolbar">
+
+      <div class="search-wrap">
+
+        <input
+          id="search"
+          type="search"
+          placeholder="Search country or ISO code"
+          aria-label="Search country or ISO code"
+        >
+
+        <button
+          id="clearSearch"
+          type="button"
+        >
+          Clear
+        </button>
+
+      </div>
+
+
+      <select
+        id="presence"
+        aria-label="Filter by Christian presence evidence"
+      >
+
+        <option value="">
+          All Christian-presence evidence
+        </option>
+
+        <option value="documented">
+          Documented Christian presence
+        </option>
+
+        <option value="limited">
+          Small / limited Christian presence
+        </option>
+
+        <option value="unknown">
+          Unknown / not yet researched
+        </option>
+
+      </select>
+
+
+      <select
+        id="sort"
+        aria-label="Sort countries"
+      >
+
+        <option value="need">
+          People in need ↓
+        </option>
+
+        <option value="name">
+          Country A–Z
+        </option>
+
+        <option value="start">
+          Crisis start
+        </option>
+
+        <option value="christian">
+          Christian population %
+        </option>
+
+      </select>
+
+    </section>
+
+
+    <!-- ====================================================
+         DATA DESCRIPTION
+         ==================================================== -->
+
+    <section class="data-intro">
+
+      <div class="eyebrow">
+        PEOPLE IN NEED
+      </div>
+
+      <h2>
+        Countries with the greatest humanitarian need
+      </h2>
+
+      <p>
+        Rankings use the latest available country-level
+        intersectoral People in Need assessment returned by
+        the HDX Humanitarian API.
+      </p>
+
+      <div
+        id="showing"
+        class="showing"
+      >
+        Loading countries…
+      </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         COUNTRY CARDS
+         ==================================================== -->
+
+    <section
+      id="crisisGrid"
+      class="grid"
+      aria-live="polite"
+    ></section>
+
+
+    <!-- ====================================================
+         LOAD MORE
+         ==================================================== -->
+
+    <div class="load-more-wrap">
+
+      <button
+        id="loadMore"
+        type="button"
+        style="display:none"
+      >
+        Load more
+      </button>
+
+    </div>
+
+
+    <!-- ====================================================
+         METHODOLOGY
+         ==================================================== -->
+
+    <section class="method">
+
+      <div class="eyebrow">
+        METHODOLOGY
+      </div>
+
+      <h2>
+        How to read this dashboard
+      </h2>
+
+
+      <h3>
+        People in Need
+      </h3>
+
+      <p>
+        <strong>People in Need (PIN)</strong> is the principal
+        humanitarian measure displayed here. The dashboard
+        retrieves country-level intersectoral PIN records
+        directly from the HDX Humanitarian API (HAPI).
+      </p>
+
+      <p>
+        The dashboard uses national-level records
+        (<code>admin_level = 0</code>) and the total
+        intersectoral population in need
+        (<code>population_status = INN</code>). Demographic
+        subsets such as Adult and Adult - Female are excluded.
+      </p>
+
+      <p>
+        Where HAPI provides multiple reporting periods for a
+        country, the dashboard selects the record with the
+        most recent reference-period end date.
+      </p>
+
+
+      <h3>
+        Reference period
+      </h3>
+
+      <p>
+        A PIN number is not necessarily a count of people
+        identified on the day you visit this website. The
+        reference period shown on each country card identifies
+        the period to which the humanitarian assessment applies.
+      </p>
+
+
+      <h3>
+        Christian population
+      </h3>
+
+      <p>
+        Christian population percentage is a separate
+        demographic indicator. It comes from the
+        <strong>World Religion Database</strong> dataset
+        stored in <code>data/religion.json</code>.
+      </p>
+
+      <p>
+        Christian population percentage should not be
+        interpreted as a measure of the number of churches,
+        Christian organizations, humanitarian workers, or
+        operational Christian presence in a crisis.
+      </p>
+
+
+      <h3>
+        Christian presence
+      </h3>
+
+      <p>
+        Where available, the dashboard also displays the
+        separately curated Christian-presence assessment from
+        <code>data/crises.json</code>. “Unknown” means that
+        sufficient evidence has not yet been established; it
+        does not mean absence.
+      </p>
+
+
+      <h3>
+        Crisis chronology
+      </h3>
+
+      <p>
+        Crisis type and start date are maintained separately
+        from the live PIN data. They provide context for the
+        humanitarian assessment but are not used to calculate
+        the PIN figure.
+      </p>
+
+
+      <h3>
+        Live-data principle
+      </h3>
+
+      <p>
+        Humanitarian APIs can change their schemas or
+        availability. The dashboard therefore reports a
+        connection failure rather than silently presenting old
+        humanitarian numbers as live data.
+      </p>
+
+    </section>
+
+
+    <!-- ====================================================
+         DATA CONNECTION
+         ==================================================== -->
+
+    <section class="method">
+
+      <div class="eyebrow">
+        DATA CONNECTION
+      </div>
+
+      <h2>
+        Public data sources
+      </h2>
+
+      <p>
+        <strong>Humanitarian need:</strong>
+        HDX Humanitarian API (HAPI) / United Nations Office
+        for the Coordination of Humanitarian Affairs (OCHA).
+      </p>
+
+      <p>
+        <strong>Christian population:</strong>
+        World Religion Database, as represented in
+        <code>data/religion.json</code>.
+      </p>
+
+      <p>
+        <strong>Crisis context:</strong>
+        Curated country-level data in
+        <code>data/crises.json</code>, with source links
+        retained for verification.
+      </p>
+
+      <p>
+        This dashboard presents public data and does not
+        independently estimate humanitarian need.
+      </p>
+
+    </section>
+
+  </main>
+
+
+  <!-- ======================================================
+       FOOTER
+       ====================================================== -->
+
+  <footer class="wrap">
+
+    <p>
+      Sources: OCHA · HDX Humanitarian API · World Religion
+      Database · ReliefWeb
+    </p>
+
+  </footer>
+
+
+  <!-- ======================================================
+       APPLICATION
+       ====================================================== -->
+
+  <script src="app.js"></script>
+
+</body>
+</html>
