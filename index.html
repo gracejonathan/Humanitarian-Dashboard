@@ -49,15 +49,20 @@
         <option value="name">Country A–Z</option>
         <option value="start">Crisis start</option>
       </select>
+      <select id="limit">
+        <option value="12">12 crises</option>
+      </select>
     </section>
+
+    <section id="resultsInfo" class="results-info"></section>
 
     <section id="crisisGrid" class="grid"></section>
 
     <section class="method">
       <div class="eyebrow">Methodology</div>
       <h2>How to read this dashboard</h2>
-      <p><strong>People in need</strong> is the principal humanitarian measure. The production data layer records the source, reporting period, publication date and retrieval date for each number. Crisis start dates and Christian-presence evidence are maintained as separate fields.</p>
-      <p><strong>Christian presence is not inferred from religion statistics.</strong> “Unknown” means that the dashboard has not established sufficient evidence; it does not mean absence.</p>
+      <p><strong>People in need</strong> is the principal humanitarian measure. The production data layer records the source, reporting period, publication date and retrieval date for each number.</p>
+      <p><strong>Christian presence is not inferred from religion statistics.</strong> "Unknown" means that the dashboard has not established sufficient evidence; it does not mean absence.</p>
       <p>Humanitarian APIs can change their schemas or availability. The dashboard therefore reports connection success or failure rather than silently presenting stale data as live.</p>
     </section>
   </main>
