@@ -32,7 +32,6 @@ const state = {
   crises: [],
   rows: [],
   rowById: new Map(),
-  discoveredPlans: {},
   liveCount: 0,
   christianPercentByIso3: { ...DEFAULT_CHRISTIAN_PERCENTAGES }
 };
@@ -74,15 +73,6 @@ function normalizeIso3(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
-function looksLikeInNeedMetric(value) {
-  const label = String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  return label.includes("inneed") ||
-    label.includes("peopleinneed") ||
-    label.includes("personsinneed") ||
-    label.includes("peopleneed") ||
-    label.includes("pin");
-}
-
 async function loadChristianPercentages() {
   const fallback = { ...DEFAULT_CHRISTIAN_PERCENTAGES };
   try {
@@ -109,31 +99,6 @@ async function loadChristianPercentages() {
   }
 }
 
-function normalizeHapiCountryItem(item) {
-  const iso3 = normalizeIso3(
-    item?.iso3 || item?.country_iso3 || item?.country?.iso3 || item?.countryCode || item?.country_code || item?.code || ""
-  );
-  if (!iso3) return null;
-
-  const name = item?.name || item?.country_name || item?.country?.name || item?.country || item?.countryName || iso3;
-  const started = item?.start_date || item?.startDate || item?.started || item?.date || null;
-  const type = item?.crisis_type || item?.type || item?.category || "Humanitarian emergency";
-  const region = item?.region || item?.country_region || item?.country?.region || "Global";
-
-  return {
-    id: iso3.toLowerCase(),
-    iso3,
-    name: String(name),
-    region: String(region),
-    type: String(type),
-    started: started ? String(started) : null,
-    christianPresence: "documented",
-    christianLabel: "Current OCHA crisis source",
-    christianEvidence: "Live crisis source from OCHA HDX HAPI; source-backed until verified",
-    sourceLinks: [["HDX HAPI", "https://data.humdata.org/"], ["ReliefWeb", `https://reliefweb.int/search?search=${encodeURIComponent(String(name))}`]]
-  };
-}
-
 async function getJSON(url, label) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -152,158 +117,53 @@ async function getJSON(url, label) {
   }
 }
 
+// Fetch active crises from ReliefWeb API (CORS-enabled, no proxy needed).
+// This is a direct browser request to api.reliefweb.int.
 async function fetchGlobalCrisisWatchlist() {
-  const crisisEndpoint = "https://api.humdata.org/api/3/action/hdx_crisisdata_list?active=True";
-  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises");
-  if (!crisisJson) return FALLBACK_CRISIS_SEED;
-
-  const rawList = Array.isArray(crisisJson)
-    ? crisisJson
-    : Array.isArray(crisisJson?.result)
-      ? crisisJson.result
-      : Array.isArray(crisisJson?.data)
-        ? crisisJson.data
-        : Array.isArray(crisisJson?.records)
-          ? crisisJson.records
-          : [];
-
-  const normalized = rawList.map(item => normalizeHapiCountryItem(item)).filter(Boolean).slice(0, 12);
-  return normalized.length ? normalized : FALLBACK_CRISIS_SEED;
-}
-
-function extractPlans(json) {
-  const raw = Array.isArray(json) ? json : (json?.data || json?.plans || json?.results || []);
-  const plans = Array.isArray(raw) ? raw : [];
-  const map = {};
-
-  for (const p of plans) {
-    const id = p?.id || p?.planId || p?.plan_id;
-    if (!id) continue;
-
-    const isoCandidates = [
-      p?.iso3,
-      p?.country?.iso3,
-      p?.country?.iso3Code,
-      p?.countryCode,
-      p?.country?.code,
-      p?.operation?.iso3,
-      p?.locations?.[0]?.iso3,
-      p?.locations?.[0]?.refCode,
-      p?.locations?.[0]?.code,
-      p?.locations?.[0]?.pcode
-    ].filter(Boolean);
-
-    const iso = String(isoCandidates[0] || "").toUpperCase();
-    if (iso) map[iso] = id;
+  // ReliefWeb API endpoint: GET /v1/disasters with status filter for ongoing crises.
+  // Supports CORS, so browser requests work without a proxy.
+  const url = "https://api.reliefweb.int/v1/disasters?filter[field]=status&filter[value]=ongoing&limit=50";
+  const json = await getJSON(url, "ReliefWeb API active disasters");
+  if (!json || !json.data || !Array.isArray(json.data)) {
+    log("ReliefWeb returned no crisis data; using curated fallback list", "bad");
+    return FALLBACK_CRISIS_SEED;
   }
 
-  return map;
-}
+  // Extract crises from ReliefWeb response and normalize to our schema.
+  const normalized = json.data
+    .map(item => {
+      const fields = item?.fields || {};
+      const name = fields?.name || "Unknown Crisis";
+      
+      // ReliefWeb provides a primary_country or countries array.
+      // For now, we'll map by the crisis name and attach to known countries in our seed.
+      const iso3 = (fields?.primary_country?.iso3 || "").toUpperCase();
+      const started = fields?.date?.created || fields?.date?.start || null;
+      const type = fields?.type?.[0]?.name || "Humanitarian emergency";
 
-function extractPIN(json) {
-  if (!json) return null;
+      return {
+        id: (iso3 || name).toLowerCase().replace(/\s+/g, "-"),
+        iso3: iso3 || "UNK",
+        name,
+        region: fields?.primary_country?.region?.name || "Global",
+        type,
+        started,
+        christianPresence: "documented",
+        christianLabel: "ReliefWeb live source",
+        christianEvidence: "Live crisis source from ReliefWeb API; source-backed until verified",
+        sourceLinks: [["ReliefWeb", `https://reliefweb.int/disasters/${item?.id || ""}`], ["ReliefWeb Map", "https://reliefweb.int/map"]]
+      };
+    })
+    .filter(crisis => crisis.iso3 !== "UNK") // Exclude crises with unknown country codes
+    .slice(0, 12); // Limit to 12 for consistency with original dashboard
 
-  // The plan endpoint now puts the overall PIN in the plan version's details,
-  // rather than in an attachment metric total. Check that canonical location
-  // first so that a sector or demographic subtotal cannot be reported as PIN.
-  const planDetails = [
-    json?.data?.plan?.planVersion?.value?.planDetails,
-    json?.data?.planVersion?.value?.planDetails,
-    json?.data?.plan?.version?.value?.planDetails,
-    json?.data?.plan?.planDetails,
-    json?.data?.planDetails,
-    ...[json?.data?.attachments, json?.attachments]
-      .filter(Array.isArray)
-      .flatMap(attachments => attachments.map(attachment => attachment?.attachmentVersion?.value?.planDetails))
-  ];
-
-  for (const details of planDetails) {
-    if (!details || typeof details !== "object") continue;
-    const value = details.peopleInNeed ?? details.people_in_need ?? details.pin;
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      return { value: numeric, description: "overall people in need" };
-    }
+  if (normalized.length === 0) {
+    log("ReliefWeb returned crises but none could be normalized; using curated fallback list", "bad");
+    return FALLBACK_CRISIS_SEED;
   }
 
-  const candidates = [];
-
-  const addCandidate = (value, description = "") => {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) candidates.push({ value: numeric, description: String(description || "") });
-  };
-
-  const inspectNode = (node) => {
-    if (!node || typeof node !== "object") return;
-
-    if (Array.isArray(node)) {
-      for (const item of node) inspectNode(item);
-      return;
-    }
-
-    const label = String(node?.type ?? node?.name ?? node?.metricType ?? node?.valueType ?? "");
-    if (looksLikeInNeedMetric(label)) {
-      addCandidate(node?.value ?? node?.amount ?? node?.total ?? node?.count ?? node?.number, node?.description || label);
-    }
-
-    for (const child of Object.values(node)) {
-      if (child && typeof child === "object") inspectNode(child);
-    }
-  };
-
-  const attachmentGroups = [
-    json?.data?.attachments,
-    json?.attachments,
-    json?.data?.value?.attachments,
-    json?.data?.plan?.attachments
-  ].filter(Array.isArray).flat();
-
-  for (const attachment of attachmentGroups) {
-    const totals = attachment?.attachmentVersion?.value?.metrics?.values?.totals;
-    if (Array.isArray(totals)) {
-      for (const total of totals) {
-        const label = String(total?.type ?? total?.name ?? total?.metricType ?? "");
-        if (looksLikeInNeedMetric(label)) {
-          addCandidate(total?.value ?? total?.amount ?? total?.total ?? total?.count ?? total?.number, total?.description || label);
-        }
-      }
-    }
-    inspectNode(attachment);
-  }
-
-  if (!candidates.length) {
-    inspectNode(json);
-  }
-
-  if (!candidates.length) return null;
-
-  candidates.sort((a, b) => b.value - a.value);
-  return candidates[0];
-}
-
-async function discoverOchaPlans() {
-  const endpoints = ["https://api.hpc.tools/v2/public/plan", "https://api.hpc.tools/v2/public/plan?status=active"];
-  for (const url of endpoints) {
-    const json = await getJSON(url, "OCHA Humanitarian Programme Cycle plan API");
-    if (!json) continue;
-    const plans = extractPlans(json);
-    if (Object.keys(plans).length) return plans;
-  }
-  return {};
-}
-
-async function getOchaPIN(crisis, planId) {
-  const url = `https://api.hpc.tools/v2/public/plan/${encodeURIComponent(planId)}`;
-  const json = await getJSON(url, `OCHA current PIN data · ${crisis.name}`);
-  if (!json) return null;
-
-  const pin = extractPIN(json);
-  if (pin) {
-    log(`${crisis.name}: ${fmt(pin.value)} people in need returned by OCHA`, "ok");
-  } else {
-    log(`${crisis.name}: OCHA responded but no overall PIN was found`, "bad");
-  }
-  return pin;
+  log(`ReliefWeb API returned ${normalized.length} live crisis record(s)`, "ok");
+  return normalized;
 }
 
 function render() {
@@ -341,12 +201,11 @@ function render() {
       <div class="muted">${r.peopleInNeed != null ? "people in humanitarian need" : "current PIN unavailable"}</div>
       <div class="meta">
         <div class="muted">Crisis began <strong>${formatDate(r.started)}</strong></div>
-        <div class="muted">Humanitarian source <strong>${esc(r.source || "Not available")}</strong></div>
+        <div class="muted">Humanitarian source <strong>${esc(r.source || "ReliefWeb")}</strong></div>
         <div class="muted">Christian presence <strong class="christian">${esc(r.christianLabel)}${r.christianPercent != null ? ` · ${r.christianPercent.toFixed(1)}% Christian share` : ""}</strong></div>
         <div class="muted">Evidence <strong>${esc(r.christianEvidence)}</strong></div>
       </div>
       <div class="sources">
-        ${r.live && r.planId ? `<a href="https://api.hpc.tools/v2/public/plan/${encodeURIComponent(r.planId)}" target="_blank" rel="noopener">OCHA API ↗</a>` : ""}
         ${r.sourceLinks.map(s => `<a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])} ↗</a>`).join("")}
       </div>
     </article>
@@ -355,56 +214,35 @@ function render() {
 
 async function refresh() {
   $("connectionLog").innerHTML = "";
-  status("Loading global crisis watchlist…", "wait");
+  status("Loading global crisis watchlist from ReliefWeb…", "wait");
   log("Dashboard JavaScript is running", "ok");
 
   state.christianPercentByIso3 = await loadChristianPercentages();
 
+  // Fetch the crisis watchlist from ReliefWeb (CORS-enabled, live data).
   const watchlist = await fetchGlobalCrisisWatchlist();
   state.crises = watchlist;
   state.rows = state.crises.map(row => ({
     ...row,
     peopleInNeed: row.peopleInNeed ?? null,
-    live: Boolean(row.live),
+    live: !FALLBACK_CRISIS_SEED.some(seed => seed.id === row.id), // Mark as live if not from fallback
+    source: "ReliefWeb API",
     christianPercent: state.christianPercentByIso3[normalizeIso3(row.iso3)] ?? null,
     christianLabel: row.christianPercent != null ? "Documented Christian presence (estimated share)" : row.christianLabel || "Documented Christian presence"
   }));
   state.rowById = new Map(state.rows.map(row => [row.id, row]));
+  state.liveCount = state.rows.filter(row => row.live).length;
   render();
   log(`Global crisis watchlist loaded: ${state.crises.length} crisis records`, "ok");
 
-  status("Connecting to OCHA…", "wait");
-  state.discoveredPlans = await discoverOchaPlans();
-
-  const liveResults = await Promise.all(
-    state.crises.map(async crisis => {
-      const planId = state.discoveredPlans[crisis.iso3];
-      if (!planId) return null;
-
-      const pin = await getOchaPIN(crisis, planId);
-      if (pin == null) return null;
-
-      const row = state.rowById.get(crisis.id);
-      if (!row) return null;
-
-      row.peopleInNeed = pin.value;
-      row.source = `OCHA HPC · ${pin.description || "current plan"}`;
-      row.planId = planId;
-      row.live = true;
-      return crisis.id;
-    })
-  );
-
-  state.liveCount = liveResults.filter(Boolean).length;
-  render();
   $("lastRefresh").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   if (state.liveCount) {
-    status(`Live OCHA connection succeeded · ${state.liveCount} crisis record(s) refreshed`, "ok");
-    log(`Refresh complete: ${state.liveCount} live OCHA record(s) loaded`, "ok");
+    status(`ReliefWeb connection succeeded · ${state.liveCount} live crisis record(s)`, "ok");
+    log(`Refresh complete: ${state.liveCount} live ReliefWeb crisis record(s) loaded`, "ok");
   } else {
-    status("OCHA connection did not return usable PIN data for the current global watchlist", "bad");
-    log("Refresh complete: no live OCHA PIN values were obtained for the current global watchlist. Source-backed records remain visible.", "bad");
+    status("ReliefWeb returned curated fallback records", "bad");
+    log("Refresh complete: using curated fallback records (ReliefWeb unavailable or returned no ISO3 codes).", "bad");
   }
 }
 
