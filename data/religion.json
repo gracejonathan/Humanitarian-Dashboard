@@ -1,0 +1,1674 @@
+{
+  "metadata": {
+    "title": "Christian Population by Country",
+    "source": "World Religion Database",
+    "sourcePublisher": "Brill / World Religion Database; ARDA presentation",
+    "year": 2025,
+    "measure": "Percentage of population identified as Christian",
+    "definition": "Followers of Jesus Christ, including Catholics, Protestants, Orthodox, Independents, and unaffiliated Christians.",
+    "sourceUrl": "https://www.thearda.com/world-religion/np-sort?var=ADH_415",
+    "accessed": "2026-10-02",
+    "note": "This demographic percentage is separate from the dashboard's curated local Christian-presence assessment. It should not be interpreted as church capacity, humanitarian response capacity, or organizational presence."
+  },
+  "countries": [
+    {
+      "name": "Afghanistan",
+      "christianPopulationPercent": 0.02,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AFG"
+    },
+    {
+      "name": "Albania",
+      "christianPopulationPercent": 32.6,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ALB"
+    },
+    {
+      "name": "Algeria",
+      "christianPopulationPercent": 0.32,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DZA"
+    },
+    {
+      "name": "American Samoa",
+      "christianPopulationPercent": 97.61,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ASM"
+    },
+    {
+      "name": "Andorra",
+      "christianPopulationPercent": 90.84,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AND"
+    },
+    {
+      "name": "Angola",
+      "christianPopulationPercent": 91.34,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AGO"
+    },
+    {
+      "name": "Anguilla",
+      "christianPopulationPercent": 90.6,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AIA"
+    },
+    {
+      "name": "Antigua and Barbuda",
+      "christianPopulationPercent": 92.51,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ATG"
+    },
+    {
+      "name": "Argentina",
+      "christianPopulationPercent": 88.59,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ARG"
+    },
+    {
+      "name": "Armenia",
+      "christianPopulationPercent": 94.72,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ARM"
+    },
+    {
+      "name": "Aruba",
+      "christianPopulationPercent": 94.6,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ABW"
+    },
+    {
+      "name": "Australia",
+      "christianPopulationPercent": 53.59,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AUS"
+    },
+    {
+      "name": "Austria",
+      "christianPopulationPercent": 68.58,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AUT"
+    },
+    {
+      "name": "Azerbaijan",
+      "christianPopulationPercent": 2.42,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "AZE"
+    },
+    {
+      "name": "Bahamas, The",
+      "christianPopulationPercent": 93.07,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BHS"
+    },
+    {
+      "name": "Bahrain",
+      "christianPopulationPercent": 12.03,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BHR"
+    },
+    {
+      "name": "Bangladesh",
+      "christianPopulationPercent": 0.63,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BGD"
+    },
+    {
+      "name": "Barbados",
+      "christianPopulationPercent": 94.95,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BRB"
+    },
+    {
+      "name": "Belarus",
+      "christianPopulationPercent": 80.8,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BLR"
+    },
+    {
+      "name": "Belgium",
+      "christianPopulationPercent": 63.71,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BEL"
+    },
+    {
+      "name": "Belize",
+      "christianPopulationPercent": 91.49,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BLZ"
+    },
+    {
+      "name": "Benin",
+      "christianPopulationPercent": 43.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BEN"
+    },
+    {
+      "name": "Bermuda",
+      "christianPopulationPercent": 88.71,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BMU"
+    },
+    {
+      "name": "Bhutan",
+      "christianPopulationPercent": 2.39,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BTN"
+    },
+    {
+      "name": "Bolivia",
+      "christianPopulationPercent": 92.83,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BOL"
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "christianPopulationPercent": 49.92,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BIH"
+    },
+    {
+      "name": "Botswana",
+      "christianPopulationPercent": 70.19,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BWA"
+    },
+    {
+      "name": "Brazil",
+      "christianPopulationPercent": 90.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BRA"
+    },
+    {
+      "name": "British Virgin Islands",
+      "christianPopulationPercent": 81.82,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VGB"
+    },
+    {
+      "name": "Brunei",
+      "christianPopulationPercent": 11.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BRN"
+    },
+    {
+      "name": "Bulgaria",
+      "christianPopulationPercent": 83.6,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BGR"
+    },
+    {
+      "name": "Burkina Faso",
+      "christianPopulationPercent": 25.13,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BFA"
+    },
+    {
+      "name": "Burundi",
+      "christianPopulationPercent": 93.37,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BDI"
+    },
+    {
+      "name": "Cabo Verde",
+      "christianPopulationPercent": 94.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CPV"
+    },
+    {
+      "name": "Cambodia",
+      "christianPopulationPercent": 2.86,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KHM"
+    },
+    {
+      "name": "Cameroon",
+      "christianPopulationPercent": 57.37,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CMR"
+    },
+    {
+      "name": "Canada",
+      "christianPopulationPercent": 60.99,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CAN"
+    },
+    {
+      "name": "Caribbean Netherlands",
+      "christianPopulationPercent": 92.15,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BES"
+    },
+    {
+      "name": "Cayman Islands",
+      "christianPopulationPercent": 82.23,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CYM"
+    },
+    {
+      "name": "Central African Republic",
+      "christianPopulationPercent": 73.18,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CAF"
+    },
+    {
+      "name": "Chad",
+      "christianPopulationPercent": 31.41,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TCD"
+    },
+    {
+      "name": "Chile",
+      "christianPopulationPercent": 88.25,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CHL"
+    },
+    {
+      "name": "China",
+      "christianPopulationPercent": 8.54,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CHN"
+    },
+    {
+      "name": "Colombia",
+      "christianPopulationPercent": 95.4,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "COL"
+    },
+    {
+      "name": "Comoros",
+      "christianPopulationPercent": 0.53,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "COM"
+    },
+    {
+      "name": "Congo, Democratic Republic of the",
+      "christianPopulationPercent": 95.05,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "COD"
+    },
+    {
+      "name": "Congo, Republic of the",
+      "christianPopulationPercent": 84.32,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "COG"
+    },
+    {
+      "name": "Cook Islands",
+      "christianPopulationPercent": 96.44,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "COK"
+    },
+    {
+      "name": "Costa Rica",
+      "christianPopulationPercent": 95.38,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CRI"
+    },
+    {
+      "name": "CÃ´te d'Ivoire",
+      "christianPopulationPercent": 37.85,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CIV"
+    },
+    {
+      "name": "Croatia",
+      "christianPopulationPercent": 93.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "HRV"
+    },
+    {
+      "name": "Cuba",
+      "christianPopulationPercent": 60.66,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CUB"
+    },
+    {
+      "name": "CuraÃ§ao",
+      "christianPopulationPercent": 93.53,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CUW"
+    },
+    {
+      "name": "Cyprus",
+      "christianPopulationPercent": 70.52,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CYP"
+    },
+    {
+      "name": "Czech Republic",
+      "christianPopulationPercent": 34.98,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CZE"
+    },
+    {
+      "name": "Denmark",
+      "christianPopulationPercent": 76.61,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DNK"
+    },
+    {
+      "name": "Djibouti",
+      "christianPopulationPercent": 1.01,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DJI"
+    },
+    {
+      "name": "Dominica",
+      "christianPopulationPercent": 94.41,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DMA"
+    },
+    {
+      "name": "Dominican Republic",
+      "christianPopulationPercent": 94.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DOM"
+    },
+    {
+      "name": "Ecuador",
+      "christianPopulationPercent": 94.75,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ECU"
+    },
+    {
+      "name": "Egypt",
+      "christianPopulationPercent": 8.79,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "EGY"
+    },
+    {
+      "name": "El Salvador",
+      "christianPopulationPercent": 96.68,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SLV"
+    },
+    {
+      "name": "Equatorial Guinea",
+      "christianPopulationPercent": 87.9,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GNQ"
+    },
+    {
+      "name": "Eritrea",
+      "christianPopulationPercent": 44.2,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ERI"
+    },
+    {
+      "name": "Estonia",
+      "christianPopulationPercent": 37.16,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "EST"
+    },
+    {
+      "name": "Ethiopia",
+      "christianPopulationPercent": 60.87,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ETH"
+    },
+    {
+      "name": "Falkland Islands (Islas Malvinas)",
+      "christianPopulationPercent": 82.76,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FLK"
+    },
+    {
+      "name": "Faroe Islands",
+      "christianPopulationPercent": 98.04,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FRO"
+    },
+    {
+      "name": "Fiji",
+      "christianPopulationPercent": 63.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FJI"
+    },
+    {
+      "name": "Finland",
+      "christianPopulationPercent": 75.75,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FIN"
+    },
+    {
+      "name": "France",
+      "christianPopulationPercent": 63.32,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FRA"
+    },
+    {
+      "name": "French Guiana",
+      "christianPopulationPercent": 84.2,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GUF"
+    },
+    {
+      "name": "French Polynesia",
+      "christianPopulationPercent": 93.89,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PYF"
+    },
+    {
+      "name": "Gabon",
+      "christianPopulationPercent": 84.56,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GAB"
+    },
+    {
+      "name": "Gambia, The",
+      "christianPopulationPercent": 4.69,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GMB"
+    },
+    {
+      "name": "Georgia",
+      "christianPopulationPercent": 85.84,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GEO"
+    },
+    {
+      "name": "Germany",
+      "christianPopulationPercent": 59.48,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "DEU"
+    },
+    {
+      "name": "Ghana",
+      "christianPopulationPercent": 71.29,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GHA"
+    },
+    {
+      "name": "Gibraltar",
+      "christianPopulationPercent": 88.62,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GIB"
+    },
+    {
+      "name": "Greece",
+      "christianPopulationPercent": 88.79,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GRC"
+    },
+    {
+      "name": "Greenland",
+      "christianPopulationPercent": 95.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GRL"
+    },
+    {
+      "name": "Grenada",
+      "christianPopulationPercent": 96.58,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GRD"
+    },
+    {
+      "name": "Guadeloupe",
+      "christianPopulationPercent": 95.87,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GLP"
+    },
+    {
+      "name": "Guam",
+      "christianPopulationPercent": 94.02,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GUM"
+    },
+    {
+      "name": "Guatemala",
+      "christianPopulationPercent": 97.35,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GTM"
+    },
+    {
+      "name": "Guernsey",
+      "christianPopulationPercent": 85.23,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GGY"
+    },
+    {
+      "name": "Guinea",
+      "christianPopulationPercent": 3.54,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GIN"
+    },
+    {
+      "name": "Guinea-Bissau",
+      "christianPopulationPercent": 12.97,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GNB"
+    },
+    {
+      "name": "Guyana",
+      "christianPopulationPercent": 54.02,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GUY"
+    },
+    {
+      "name": "Haiti",
+      "christianPopulationPercent": 94.26,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "HTI"
+    },
+    {
+      "name": "Honduras",
+      "christianPopulationPercent": 95.68,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "HND"
+    },
+    {
+      "name": "Hong Kong",
+      "christianPopulationPercent": 15.16,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "HKG"
+    },
+    {
+      "name": "Hungary",
+      "christianPopulationPercent": 87.26,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "HUN"
+    },
+    {
+      "name": "Iceland",
+      "christianPopulationPercent": 89.33,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ISL"
+    },
+    {
+      "name": "India",
+      "christianPopulationPercent": 4.98,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IND"
+    },
+    {
+      "name": "Indonesia",
+      "christianPopulationPercent": 12.88,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IDN"
+    },
+    {
+      "name": "Iran",
+      "christianPopulationPercent": 0.99,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IRN"
+    },
+    {
+      "name": "Iraq",
+      "christianPopulationPercent": 0.48,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IRQ"
+    },
+    {
+      "name": "Ireland",
+      "christianPopulationPercent": 92.16,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IRL"
+    },
+    {
+      "name": "Isle of Man",
+      "christianPopulationPercent": 84.1,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "IMN"
+    },
+    {
+      "name": "Israel",
+      "christianPopulationPercent": 1.88,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ISR"
+    },
+    {
+      "name": "Italy",
+      "christianPopulationPercent": 75.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ITA"
+    },
+    {
+      "name": "Jamaica",
+      "christianPopulationPercent": 84.55,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "JAM"
+    },
+    {
+      "name": "Japan",
+      "christianPopulationPercent": 2.18,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "JPN"
+    },
+    {
+      "name": "Jersey",
+      "christianPopulationPercent": 85.23,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "JEY"
+    },
+    {
+      "name": "Jordan",
+      "christianPopulationPercent": 1.11,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "JOR"
+    },
+    {
+      "name": "Kazakhstan",
+      "christianPopulationPercent": 18.45,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KAZ"
+    },
+    {
+      "name": "Kenya",
+      "christianPopulationPercent": 79.41,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KEN"
+    },
+    {
+      "name": "Kiribati",
+      "christianPopulationPercent": 96.81,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KIR"
+    },
+    {
+      "name": "Korea, (North) Democratic Republic of",
+      "christianPopulationPercent": 0.38,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PRK"
+    },
+    {
+      "name": "Korea, (South) Republic of",
+      "christianPopulationPercent": 33.06,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KOR"
+    },
+    {
+      "name": "Kosovo",
+      "christianPopulationPercent": 6.91,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "XKX"
+    },
+    {
+      "name": "Kuwait",
+      "christianPopulationPercent": 14.62,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KWT"
+    },
+    {
+      "name": "Kyrgyzstan",
+      "christianPopulationPercent": 2.8,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KGZ"
+    },
+    {
+      "name": "Laos",
+      "christianPopulationPercent": 2.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LAO"
+    },
+    {
+      "name": "Latvia",
+      "christianPopulationPercent": 79.85,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LVA"
+    },
+    {
+      "name": "Lebanon",
+      "christianPopulationPercent": 34.65,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LBN"
+    },
+    {
+      "name": "Lesotho",
+      "christianPopulationPercent": 91.95,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LSO"
+    },
+    {
+      "name": "Liberia",
+      "christianPopulationPercent": 41.22,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LBR"
+    },
+    {
+      "name": "Libya",
+      "christianPopulationPercent": 0.53,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LBY"
+    },
+    {
+      "name": "Liechtenstein",
+      "christianPopulationPercent": 89.5,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LIE"
+    },
+    {
+      "name": "Lithuania",
+      "christianPopulationPercent": 89.45,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LTU"
+    },
+    {
+      "name": "Luxembourg",
+      "christianPopulationPercent": 75.76,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LUX"
+    },
+    {
+      "name": "Macau",
+      "christianPopulationPercent": 10.07,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MAC"
+    },
+    {
+      "name": "Madagascar",
+      "christianPopulationPercent": 58.11,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MDG"
+    },
+    {
+      "name": "Malawi",
+      "christianPopulationPercent": 79.3,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MWI"
+    },
+    {
+      "name": "Malaysia",
+      "christianPopulationPercent": 9.27,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MYS"
+    },
+    {
+      "name": "Maldives",
+      "christianPopulationPercent": 0.3,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MDV"
+    },
+    {
+      "name": "Mali",
+      "christianPopulationPercent": 3.5,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MLI"
+    },
+    {
+      "name": "Malta",
+      "christianPopulationPercent": 93.63,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MLT"
+    },
+    {
+      "name": "Marshall Islands",
+      "christianPopulationPercent": 95.05,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MHL"
+    },
+    {
+      "name": "Martinique",
+      "christianPopulationPercent": 96.04,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MTQ"
+    },
+    {
+      "name": "Mauritania",
+      "christianPopulationPercent": 0.21,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MRT"
+    },
+    {
+      "name": "Mauritius",
+      "christianPopulationPercent": 33.06,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MUS"
+    },
+    {
+      "name": "Mayotte",
+      "christianPopulationPercent": 0.47,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MYT"
+    },
+    {
+      "name": "Mexico",
+      "christianPopulationPercent": 95.69,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MEX"
+    },
+    {
+      "name": "Micronesia, Federated States of",
+      "christianPopulationPercent": 94.69,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "FSM"
+    },
+    {
+      "name": "Moldova",
+      "christianPopulationPercent": 96.98,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MDA"
+    },
+    {
+      "name": "Monaco",
+      "christianPopulationPercent": 85.33,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MCO"
+    },
+    {
+      "name": "Mongolia",
+      "christianPopulationPercent": 2.0,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MNG"
+    },
+    {
+      "name": "Montenegro",
+      "christianPopulationPercent": 78.67,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MNE"
+    },
+    {
+      "name": "Montserrat",
+      "christianPopulationPercent": 91.42,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MSR"
+    },
+    {
+      "name": "Morocco",
+      "christianPopulationPercent": 0.1,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MAR"
+    },
+    {
+      "name": "Mozambique",
+      "christianPopulationPercent": 55.81,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MOZ"
+    },
+    {
+      "name": "Myanmar",
+      "christianPopulationPercent": 8.18,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MMR"
+    },
+    {
+      "name": "Namibia",
+      "christianPopulationPercent": 90.83,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NAM"
+    },
+    {
+      "name": "Nauru",
+      "christianPopulationPercent": 75.02,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NRU"
+    },
+    {
+      "name": "Nepal",
+      "christianPopulationPercent": 4.63,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NPL"
+    },
+    {
+      "name": "Netherlands",
+      "christianPopulationPercent": 53.15,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NLD"
+    },
+    {
+      "name": "New Caledonia",
+      "christianPopulationPercent": 85.1,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NCL"
+    },
+    {
+      "name": "New Zealand",
+      "christianPopulationPercent": 50.94,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NZL"
+    },
+    {
+      "name": "Nicaragua",
+      "christianPopulationPercent": 95.05,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NIC"
+    },
+    {
+      "name": "Niger",
+      "christianPopulationPercent": 0.27,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NER"
+    },
+    {
+      "name": "Nigeria",
+      "christianPopulationPercent": 45.83,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NGA"
+    },
+    {
+      "name": "Niue",
+      "christianPopulationPercent": 96.65,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NIU"
+    },
+    {
+      "name": "North Macedonia",
+      "christianPopulationPercent": 63.67,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MKD"
+    },
+    {
+      "name": "Northern Mariana Islands",
+      "christianPopulationPercent": 81.2,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MNP"
+    },
+    {
+      "name": "Norway",
+      "christianPopulationPercent": 86.42,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "NOR"
+    },
+    {
+      "name": "Occupied Palestinian Territories",
+      "christianPopulationPercent": 0.76,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PSE"
+    },
+    {
+      "name": "Oman",
+      "christianPopulationPercent": 3.73,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "OMN"
+    },
+    {
+      "name": "Pakistan",
+      "christianPopulationPercent": 1.98,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PAK"
+    },
+    {
+      "name": "Palau",
+      "christianPopulationPercent": 92.24,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PLW"
+    },
+    {
+      "name": "Panama",
+      "christianPopulationPercent": 89.88,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PAN"
+    },
+    {
+      "name": "Papua New Guinea",
+      "christianPopulationPercent": 94.82,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PNG"
+    },
+    {
+      "name": "Paraguay",
+      "christianPopulationPercent": 95.48,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PRY"
+    },
+    {
+      "name": "Peru",
+      "christianPopulationPercent": 96.47,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PER"
+    },
+    {
+      "name": "Philippines",
+      "christianPopulationPercent": 89.89,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PHL"
+    },
+    {
+      "name": "Poland",
+      "christianPopulationPercent": 95.72,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "POL"
+    },
+    {
+      "name": "Portugal",
+      "christianPopulationPercent": 88.14,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PRT"
+    },
+    {
+      "name": "Puerto Rico",
+      "christianPopulationPercent": 95.77,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "PRI"
+    },
+    {
+      "name": "Qatar",
+      "christianPopulationPercent": 13.62,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "QAT"
+    },
+    {
+      "name": "RÃ©union",
+      "christianPopulationPercent": 87.53,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "REU"
+    },
+    {
+      "name": "Romania",
+      "christianPopulationPercent": 98.54,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ROU"
+    },
+    {
+      "name": "Russia",
+      "christianPopulationPercent": 82.17,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "RUS"
+    },
+    {
+      "name": "Rwanda",
+      "christianPopulationPercent": 91.51,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "RWA"
+    },
+    {
+      "name": "Saint BarthÃ©lemy",
+      "christianPopulationPercent": 96.43,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "BLM"
+    },
+    {
+      "name": "Saint Helena",
+      "christianPopulationPercent": 95.82,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SHN"
+    },
+    {
+      "name": "Saint Kitts and Nevis",
+      "christianPopulationPercent": 94.62,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "KNA"
+    },
+    {
+      "name": "Saint Lucia",
+      "christianPopulationPercent": 95.92,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LCA"
+    },
+    {
+      "name": "Saint Martin",
+      "christianPopulationPercent": 96.44,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "MAF"
+    },
+    {
+      "name": "Saint Pierre and Miquelon",
+      "christianPopulationPercent": 94.42,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SPM"
+    },
+    {
+      "name": "Saint Vincent and the Grenadines",
+      "christianPopulationPercent": 88.63,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VCT"
+    },
+    {
+      "name": "Samoa",
+      "christianPopulationPercent": 98.79,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "WSM"
+    },
+    {
+      "name": "San Marino",
+      "christianPopulationPercent": 91.5,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SMR"
+    },
+    {
+      "name": "SÃ£o TomÃ© and PrÃ­ncipe",
+      "christianPopulationPercent": 96.1,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "STP"
+    },
+    {
+      "name": "Saudi Arabia",
+      "christianPopulationPercent": 6.98,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SAU"
+    },
+    {
+      "name": "Senegal",
+      "christianPopulationPercent": 5.04,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SEN"
+    },
+    {
+      "name": "Serbia",
+      "christianPopulationPercent": 89.45,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SRB"
+    },
+    {
+      "name": "Seychelles",
+      "christianPopulationPercent": 94.67,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SYC"
+    },
+    {
+      "name": "Sierra Leone",
+      "christianPopulationPercent": 11.65,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SLE"
+    },
+    {
+      "name": "Singapore",
+      "christianPopulationPercent": 20.67,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SGP"
+    },
+    {
+      "name": "Sint Maarten",
+      "christianPopulationPercent": 88.31,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SXM"
+    },
+    {
+      "name": "Slovakia",
+      "christianPopulationPercent": 82.16,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SVK"
+    },
+    {
+      "name": "Slovenia",
+      "christianPopulationPercent": 83.32,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SVN"
+    },
+    {
+      "name": "Solomon Islands",
+      "christianPopulationPercent": 95.28,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SLB"
+    },
+    {
+      "name": "Somalia",
+      "christianPopulationPercent": 0.02,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SOM"
+    },
+    {
+      "name": "South Africa",
+      "christianPopulationPercent": 81.53,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ZAF"
+    },
+    {
+      "name": "South Sudan",
+      "christianPopulationPercent": 60.34,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SSD"
+    },
+    {
+      "name": "Spain",
+      "christianPopulationPercent": 85.54,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ESP"
+    },
+    {
+      "name": "Sri Lanka",
+      "christianPopulationPercent": 9.23,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "LKA"
+    },
+    {
+      "name": "Sudan",
+      "christianPopulationPercent": 4.8,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SDN"
+    },
+    {
+      "name": "Suriname",
+      "christianPopulationPercent": 51.86,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SUR"
+    },
+    {
+      "name": "Swaziland",
+      "christianPopulationPercent": 87.4,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SWZ"
+    },
+    {
+      "name": "Sweden",
+      "christianPopulationPercent": 57.41,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SWE"
+    },
+    {
+      "name": "Switzerland",
+      "christianPopulationPercent": 74.46,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "CHE"
+    },
+    {
+      "name": "Syria",
+      "christianPopulationPercent": 2.45,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "SYR"
+    },
+    {
+      "name": "Taiwan",
+      "christianPopulationPercent": 6.49,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TWN"
+    },
+    {
+      "name": "Tajikistan",
+      "christianPopulationPercent": 0.58,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TJK"
+    },
+    {
+      "name": "Tanzania",
+      "christianPopulationPercent": 54.66,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TZA"
+    },
+    {
+      "name": "Thailand",
+      "christianPopulationPercent": 1.42,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "THA"
+    },
+    {
+      "name": "Timor-Leste",
+      "christianPopulationPercent": 87.78,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TLS"
+    },
+    {
+      "name": "Togo",
+      "christianPopulationPercent": 50.12,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TGO"
+    },
+    {
+      "name": "Tokelau",
+      "christianPopulationPercent": 94.29,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TKL"
+    },
+    {
+      "name": "Tonga",
+      "christianPopulationPercent": 94.71,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TON"
+    },
+    {
+      "name": "Trinidad and Tobago",
+      "christianPopulationPercent": 63.43,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TTO"
+    },
+    {
+      "name": "Tunisia",
+      "christianPopulationPercent": 0.2,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TUN"
+    },
+    {
+      "name": "Turkey/TÃ¼rkiye",
+      "christianPopulationPercent": 0.3,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TUR"
+    },
+    {
+      "name": "Turkmenistan",
+      "christianPopulationPercent": 1.25,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TKM"
+    },
+    {
+      "name": "Turks and Caicos Islands",
+      "christianPopulationPercent": 90.03,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TCA"
+    },
+    {
+      "name": "Tuvalu",
+      "christianPopulationPercent": 94.74,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "TUV"
+    },
+    {
+      "name": "Uganda",
+      "christianPopulationPercent": 83.7,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "UGA"
+    },
+    {
+      "name": "Ukraine",
+      "christianPopulationPercent": 84.66,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "UKR"
+    },
+    {
+      "name": "United Arab Emirates",
+      "christianPopulationPercent": 12.93,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ARE"
+    },
+    {
+      "name": "United Kingdom",
+      "christianPopulationPercent": 63.39,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "GBR"
+    },
+    {
+      "name": "United States (General)",
+      "christianPopulationPercent": 72.17,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "USA"
+    },
+    {
+      "name": "Uruguay",
+      "christianPopulationPercent": 63.59,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "URY"
+    },
+    {
+      "name": "Uzbekistan",
+      "christianPopulationPercent": 1.17,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "UZB"
+    },
+    {
+      "name": "Vanuatu",
+      "christianPopulationPercent": 93.39,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VUT"
+    },
+    {
+      "name": "Vatican City",
+      "christianPopulationPercent": 100.0,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VAT"
+    },
+    {
+      "name": "Venezuela",
+      "christianPopulationPercent": 92.64,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VEN"
+    },
+    {
+      "name": "Viet Nam",
+      "christianPopulationPercent": 9.32,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VNM"
+    },
+    {
+      "name": "Virgin Islands (U.S.)",
+      "christianPopulationPercent": 94.48,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "VIR"
+    },
+    {
+      "name": "Wallis and Futuna",
+      "christianPopulationPercent": 97.31,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "WLF"
+    },
+    {
+      "name": "Western Sahara",
+      "christianPopulationPercent": 0.15,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ESH"
+    },
+    {
+      "name": "Yemen",
+      "christianPopulationPercent": 0.04,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "YEM"
+    },
+    {
+      "name": "Zambia",
+      "christianPopulationPercent": 86.28,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ZMB"
+    },
+    {
+      "name": "Zimbabwe",
+      "christianPopulationPercent": 80.74,
+      "source": "World Religion Database",
+      "year": 2025,
+      "iso3": "ZWE"
+    }
+  ]
+}
