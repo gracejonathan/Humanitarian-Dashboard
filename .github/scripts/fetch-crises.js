@@ -42,7 +42,7 @@ async function fetchJSON(url) {
 
 async function fetchCrises() {
   const appname = 'humanitarian-dashboard';
-  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=50`;
+  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=100`;
 
   console.log(`[fetch-crises] Fetching from ${url}`);
 
@@ -75,15 +75,14 @@ async function fetchCrises() {
           sourceLinks: [['ReliefWeb', `https://reliefweb.int/disasters/${item?.id || ''}`], ['ReliefWeb Map', 'https://reliefweb.int/map']]
         };
       })
-      .filter(crisis => crisis.iso3 !== 'UNK')
-      .slice(0, 12);
+      .filter(crisis => crisis.iso3 !== 'UNK');
 
     if (normalized.length === 0) {
       console.log('[fetch-crises] No crises with ISO3 codes; using fallback');
       return FALLBACK_CRISIS_SEED;
     }
 
-    console.log(`[fetch-crises] Fetched ${normalized.length} live crises from ReliefWeb`);
+    console.log(`[fetch-crises] Fetched ${normalized.length} live crises from ReliefWeb (returning all)`);
     return normalized;
   } catch (error) {
     console.error(`[fetch-crises] Error fetching from ReliefWeb: ${error.message}`);
