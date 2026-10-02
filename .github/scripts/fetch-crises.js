@@ -26,178 +26,41 @@ const FALLBACK_CRISIS_SEED = [
 
 // Hardcoded country ISO3 to region mapping
 const COUNTRY_REGIONS = {
-  'AFG': 'South Asia',
-  'BGD': 'South Asia',
-  'BTN': 'South Asia',
-  'IND': 'South Asia',
-  'LKA': 'South Asia',
-  'MDV': 'South Asia',
-  'NPL': 'South Asia',
-  'PAK': 'South Asia',
-  'CHN': 'East Asia',
-  'HKG': 'East Asia',
-  'JPN': 'East Asia',
-  'KOR': 'East Asia',
-  'MNG': 'East Asia',
-  'PRK': 'East Asia',
-  'TWN': 'East Asia',
-  'BRN': 'Southeast Asia',
-  'KHM': 'Southeast Asia',
-  'IDN': 'Southeast Asia',
-  'LAO': 'Southeast Asia',
-  'MYS': 'Southeast Asia',
-  'MMR': 'Southeast Asia',
-  'PHL': 'Southeast Asia',
-  'SGP': 'Southeast Asia',
-  'THA': 'Southeast Asia',
-  'TLS': 'Southeast Asia',
-  'VNM': 'Southeast Asia',
-  'ARM': 'Caucasus',
-  'AZE': 'Caucasus',
-  'GEO': 'Caucasus',
-  'BLR': 'Europe',
-  'BGR': 'Europe',
-  'HRV': 'Europe',
-  'CZE': 'Europe',
-  'DNK': 'Europe',
-  'EST': 'Europe',
-  'FIN': 'Europe',
-  'FRA': 'Europe',
-  'DEU': 'Europe',
-  'GRC': 'Europe',
-  'HUN': 'Europe',
-  'IRL': 'Europe',
-  'ITA': 'Europe',
-  'LVA': 'Europe',
-  'LTU': 'Europe',
-  'LUX': 'Europe',
-  'MLT': 'Europe',
-  'NLD': 'Europe',
-  'POL': 'Europe',
-  'PRT': 'Europe',
-  'ROU': 'Europe',
-  'RUS': 'Europe',
-  'SVK': 'Europe',
-  'SVN': 'Europe',
-  'ESP': 'Europe',
-  'SWE': 'Europe',
-  'CHE': 'Europe',
-  'UKR': 'Europe',
-  'GBR': 'Europe',
-  'BHR': 'Middle East',
-  'EGY': 'Middle East',
-  'IRN': 'Middle East',
-  'IRQ': 'Middle East',
-  'ISR': 'Middle East',
-  'JOR': 'Middle East',
-  'KWT': 'Middle East',
-  'LBN': 'Middle East',
-  'OMN': 'Middle East',
-  'PSE': 'Middle East',
-  'QAT': 'Middle East',
-  'SAU': 'Middle East',
-  'SYR': 'Middle East',
-  'ARE': 'Middle East',
-  'YEM': 'Middle East',
-  'DZA': 'North Africa',
-  'LBY': 'North Africa',
-  'MAR': 'North Africa',
-  'TUN': 'North Africa',
-  'AGO': 'Central Africa',
-  'CMR': 'Central Africa',
-  'CAF': 'Central Africa',
-  'TCD': 'Central Africa',
-  'COG': 'Central Africa',
-  'COD': 'Central Africa',
-  'GAB': 'Central Africa',
-  'GNQ': 'Central Africa',
-  'STP': 'Central Africa',
-  'BWA': 'Southern Africa',
-  'LSO': 'Southern Africa',
-  'NAM': 'Southern Africa',
-  'ZAF': 'Southern Africa',
-  'SWZ': 'Southern Africa',
-  'BDI': 'East Africa',
-  'KMR': 'East Africa',
-  'DJI': 'East Africa',
-  'ERI': 'East Africa',
-  'ETH': 'East Africa',
-  'KEN': 'East Africa',
-  'MDG': 'East Africa',
-  'MWI': 'East Africa',
-  'MOZ': 'East Africa',
-  'RWA': 'East Africa',
-  'SOM': 'Horn of Africa',
-  'SSD': 'East Africa',
-  'TZA': 'East Africa',
-  'UGA': 'East Africa',
-  'ZMB': 'East Africa',
-  'ZWE': 'East Africa',
-  'BEN': 'West Africa',
-  'BFA': 'West Africa',
-  'CPV': 'West Africa',
-  'CIV': 'West Africa',
-  'GMB': 'West Africa',
-  'GHA': 'West Africa',
-  'GIN': 'West Africa',
-  'GNB': 'West Africa',
-  'LBR': 'West Africa',
-  'MLI': 'West Africa',
-  'MRT': 'West Africa',
-  'NER': 'West Africa',
-  'NGA': 'West Africa',
-  'SEN': 'West Africa',
-  'SLE': 'West Africa',
-  'TGO': 'West Africa',
-  'ABW': 'Caribbean',
-  'BHS': 'Caribbean',
-  'BRB': 'Caribbean',
-  'CUB': 'Caribbean',
-  'CUW': 'Caribbean',
-  'DMA': 'Caribbean',
-  'DOM': 'Caribbean',
-  'SXM': 'Caribbean',
-  'GRD': 'Caribbean',
-  'GTM': 'Caribbean',
-  'HTI': 'Caribbean',
-  'JAM': 'Caribbean',
-  'PRI': 'Caribbean',
-  'BLZ': 'Central America',
-  'CRI': 'Central America',
-  'SLV': 'Central America',
-  'HND': 'Central America',
-  'NIC': 'Central America',
-  'PAN': 'Central America',
-  'ARG': 'South America',
-  'BOL': 'South America',
-  'BRA': 'South America',
-  'CHL': 'South America',
-  'COL': 'South America',
-  'ECU': 'South America',
-  'GUY': 'South America',
-  'PRY': 'South America',
-  'PER': 'South America',
-  'SUR': 'South America',
-  'URY': 'South America',
-  'VEN': 'South America',
-  'ATF': 'Antarctica',
-  'AUS': 'Oceania',
-  'FJI': 'Oceania',
-  'KIR': 'Oceania',
-  'MHL': 'Oceania',
-  'FSM': 'Oceania',
-  'NRU': 'Oceania',
-  'NZL': 'Oceania',
-  'PLW': 'Oceania',
-  'PNG': 'Oceania',
-  'WSM': 'Oceania',
-  'SLB': 'Oceania',
-  'TON': 'Oceania',
-  'TUV': 'Oceania',
-  'VUT': 'Oceania',
-  'CAN': 'North America',
-  'MEX': 'North America',
-  'USA': 'North America'
+  'AFG': 'South Asia', 'BGD': 'South Asia', 'BTN': 'South Asia', 'IND': 'South Asia', 'LKA': 'South Asia',
+  'MDV': 'South Asia', 'NPL': 'South Asia', 'PAK': 'South Asia', 'CHN': 'East Asia', 'HKG': 'East Asia',
+  'JPN': 'East Asia', 'KOR': 'East Asia', 'MNG': 'East Asia', 'PRK': 'East Asia', 'TWN': 'East Asia',
+  'BRN': 'Southeast Asia', 'KHM': 'Southeast Asia', 'IDN': 'Southeast Asia', 'LAO': 'Southeast Asia',
+  'MYS': 'Southeast Asia', 'MMR': 'Southeast Asia', 'PHL': 'Southeast Asia', 'SGP': 'Southeast Asia',
+  'THA': 'Southeast Asia', 'TLS': 'Southeast Asia', 'VNM': 'Southeast Asia', 'ARM': 'Caucasus',
+  'AZE': 'Caucasus', 'GEO': 'Caucasus', 'BLR': 'Europe', 'BGR': 'Europe', 'HRV': 'Europe', 'CZE': 'Europe',
+  'DNK': 'Europe', 'EST': 'Europe', 'FIN': 'Europe', 'FRA': 'Europe', 'DEU': 'Europe', 'GRC': 'Europe',
+  'HUN': 'Europe', 'IRL': 'Europe', 'ITA': 'Europe', 'LVA': 'Europe', 'LTU': 'Europe', 'LUX': 'Europe',
+  'MLT': 'Europe', 'NLD': 'Europe', 'POL': 'Europe', 'PRT': 'Europe', 'ROU': 'Europe', 'RUS': 'Europe',
+  'SVK': 'Europe', 'SVN': 'Europe', 'ESP': 'Europe', 'SWE': 'Europe', 'CHE': 'Europe', 'UKR': 'Europe',
+  'GBR': 'Europe', 'BHR': 'Middle East', 'EGY': 'Middle East', 'IRN': 'Middle East', 'IRQ': 'Middle East',
+  'ISR': 'Middle East', 'JOR': 'Middle East', 'KWT': 'Middle East', 'LBN': 'Middle East', 'OMN': 'Middle East',
+  'PSE': 'Middle East', 'QAT': 'Middle East', 'SAU': 'Middle East', 'SYR': 'Middle East', 'ARE': 'Middle East',
+  'YEM': 'Middle East', 'DZA': 'North Africa', 'LBY': 'North Africa', 'MAR': 'North Africa', 'TUN': 'North Africa',
+  'AGO': 'Central Africa', 'CMR': 'Central Africa', 'CAF': 'Central Africa', 'TCD': 'Central Africa',
+  'COG': 'Central Africa', 'COD': 'Central Africa', 'GAB': 'Central Africa', 'GNQ': 'Central Africa',
+  'STP': 'Central Africa', 'BWA': 'Southern Africa', 'LSO': 'Southern Africa', 'NAM': 'Southern Africa',
+  'ZAF': 'Southern Africa', 'SWZ': 'Southern Africa', 'BDI': 'East Africa', 'KMR': 'East Africa',
+  'DJI': 'East Africa', 'ERI': 'East Africa', 'ETH': 'East Africa', 'KEN': 'East Africa', 'MDG': 'East Africa',
+  'MWI': 'East Africa', 'MOZ': 'East Africa', 'RWA': 'East Africa', 'SOM': 'Horn of Africa', 'SSD': 'East Africa',
+  'TZA': 'East Africa', 'UGA': 'East Africa', 'ZMB': 'East Africa', 'ZWE': 'East Africa', 'BEN': 'West Africa',
+  'BFA': 'West Africa', 'CPV': 'West Africa', 'CIV': 'West Africa', 'GMB': 'West Africa', 'GHA': 'West Africa',
+  'GIN': 'West Africa', 'GNB': 'West Africa', 'LBR': 'West Africa', 'MLI': 'West Africa', 'MRT': 'West Africa',
+  'NER': 'West Africa', 'NGA': 'West Africa', 'SEN': 'West Africa', 'SLE': 'West Africa', 'TGO': 'West Africa',
+  'ABW': 'Caribbean', 'BHS': 'Caribbean', 'BRB': 'Caribbean', 'CUB': 'Caribbean', 'CUW': 'Caribbean',
+  'DMA': 'Caribbean', 'DOM': 'Caribbean', 'SXM': 'Caribbean', 'GRD': 'Caribbean', 'GTM': 'Caribbean',
+  'HTI': 'Caribbean', 'JAM': 'Caribbean', 'PRI': 'Caribbean', 'BLZ': 'Central America', 'CRI': 'Central America',
+  'SLV': 'Central America', 'HND': 'Central America', 'NIC': 'Central America', 'PAN': 'Central America',
+  'ARG': 'South America', 'BOL': 'South America', 'BRA': 'South America', 'CHL': 'South America',
+  'COL': 'South America', 'ECU': 'South America', 'GUY': 'South America', 'PRY': 'South America',
+  'PER': 'South America', 'SUR': 'South America', 'URY': 'South America', 'VEN': 'South America',
+  'AUS': 'Oceania', 'FJI': 'Oceania', 'KIR': 'Oceania', 'MHL': 'Oceania', 'FSM': 'Oceania', 'NRU': 'Oceania',
+  'NZL': 'Oceania', 'PLW': 'Oceania', 'PNG': 'Oceania', 'WSM': 'Oceania', 'SLB': 'Oceania', 'TON': 'Oceania',
+  'TUV': 'Oceania', 'VUT': 'Oceania', 'CAN': 'North America', 'MEX': 'North America', 'USA': 'North America'
 };
 
 async function fetchJSON(url) {
@@ -218,14 +81,17 @@ async function fetchJSON(url) {
 
 async function fetchCrises() {
   const appname = 'humanitarian-dashboard';
-  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=100`;
+  // Query for current/active disasters with proper filtering
+  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&filter[field]=status&filter[value]=current&limit=200`;
 
-  console.log(`[fetch-crises] Fetching from ${url}`);
+  console.log(`[fetch-crises] Fetching current disasters from ${url}`);
 
   try {
     const json = await fetchJSON(url);
     if (!json || !json.data || !Array.isArray(json.data)) {
-      console.log('[fetch-crises] Invalid response structure; using fallback');
+      console.log('[fetch-crises] Invalid response structure');
+      console.log('[fetch-crises] Response keys:', Object.keys(json || {}).join(', '));
+      console.log('[fetch-crises] Using fallback');
       return FALLBACK_CRISIS_SEED;
     }
 
@@ -244,11 +110,13 @@ async function fetchCrises() {
         iso3 = iso3.toUpperCase();
         
         const started = fields?.date?.start || fields?.date?.created || null;
-        const type = fields?.type?.[0]?.name || 'Humanitarian emergency';
+        // Use disaster_type (correct field name from API)
+        const type = fields?.disaster_type?.[0]?.name || 'Humanitarian emergency';
         const region = COUNTRY_REGIONS[iso3] || 'Global';
+        const status = fields?.status || 'unknown';
 
-        if (idx < 5) {
-          console.log(`[fetch-crises] Item ${idx}: name="${name}", iso3="${iso3}", region="${region}", type="${type}"`);
+        if (idx < 10) {
+          console.log(`[fetch-crises] Item ${idx}: name="${name}", iso3="${iso3}", status="${status}", type="${type}"`);
         }
 
         return {
@@ -267,7 +135,7 @@ async function fetchCrises() {
       .filter(crisis => crisis.iso3 !== 'UNK');
 
     console.log(`[fetch-crises] After filtering for valid ISO3: ${normalized.length} crises`);
-    normalized.slice(0, 5).forEach((c, i) => {
+    normalized.slice(0, 10).forEach((c, i) => {
       console.log(`[fetch-crises] Valid crisis ${i}: ${c.name} (${c.iso3}) - ${c.region}`);
     });
 
