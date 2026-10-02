@@ -117,13 +117,14 @@ async function getJSON(url, label) {
   }
 }
 
-// Fetch active crises from ReliefWeb API (CORS-enabled, no proxy needed).
-// This is a direct browser request to api.reliefweb.int.
+// Fetch active crises from ReliefWeb API v2 (CORS-enabled, no proxy needed).
+// ReliefWeb v1 API is deprecated (HTTP 410). v2 requires an appname parameter.
 async function fetchGlobalCrisisWatchlist() {
-  // ReliefWeb API endpoint: GET /v1/disasters with status filter for ongoing crises.
+  // ReliefWeb API v2 endpoint: GET /v2/disasters with appname parameter.
   // Supports CORS, so browser requests work without a proxy.
-  const url = "https://api.reliefweb.int/v1/disasters?filter[field]=status&filter[value]=ongoing&limit=50";
-  const json = await getJSON(url, "ReliefWeb API active disasters");
+  const appname = "humanitarian-dashboard";
+  const url = `https://api.reliefweb.int/v2/disasters?appname=${encodeURIComponent(appname)}&limit=50`;
+  const json = await getJSON(url, "ReliefWeb API v2 active disasters");
   if (!json || !json.data || !Array.isArray(json.data)) {
     log("ReliefWeb returned no crisis data; using curated fallback list", "bad");
     return FALLBACK_CRISIS_SEED;
@@ -135,22 +136,23 @@ async function fetchGlobalCrisisWatchlist() {
       const fields = item?.fields || {};
       const name = fields?.name || "Unknown Crisis";
       
-      // ReliefWeb provides a primary_country or countries array.
-      // For now, we'll map by the crisis name and attach to known countries in our seed.
+      // ReliefWeb v2 provides a primary_country or countries array.
+      // Extract ISO3 from the primary country.
       const iso3 = (fields?.primary_country?.iso3 || "").toUpperCase();
       const started = fields?.date?.created || fields?.date?.start || null;
       const type = fields?.type?.[0]?.name || "Humanitarian emergency";
+      const region = fields?.primary_country?.region?.name || "Global";
 
       return {
         id: (iso3 || name).toLowerCase().replace(/\s+/g, "-"),
         iso3: iso3 || "UNK",
         name,
-        region: fields?.primary_country?.region?.name || "Global",
+        region,
         type,
         started,
         christianPresence: "documented",
         christianLabel: "ReliefWeb live source",
-        christianEvidence: "Live crisis source from ReliefWeb API; source-backed until verified",
+        christianEvidence: "Live crisis source from ReliefWeb API v2; source-backed until verified",
         sourceLinks: [["ReliefWeb", `https://reliefweb.int/disasters/${item?.id || ""}`], ["ReliefWeb Map", "https://reliefweb.int/map"]]
       };
     })
@@ -162,7 +164,7 @@ async function fetchGlobalCrisisWatchlist() {
     return FALLBACK_CRISIS_SEED;
   }
 
-  log(`ReliefWeb API returned ${normalized.length} live crisis record(s)`, "ok");
+  log(`ReliefWeb API v2 returned ${normalized.length} live crisis record(s)`, "ok");
   return normalized;
 }
 
@@ -219,14 +221,14 @@ async function refresh() {
 
   state.christianPercentByIso3 = await loadChristianPercentages();
 
-  // Fetch the crisis watchlist from ReliefWeb (CORS-enabled, live data).
+  // Fetch the crisis watchlist from ReliefWeb v2 API (CORS-enabled, live data).
   const watchlist = await fetchGlobalCrisisWatchlist();
   state.crises = watchlist;
   state.rows = state.crises.map(row => ({
     ...row,
     peopleInNeed: row.peopleInNeed ?? null,
     live: !FALLBACK_CRISIS_SEED.some(seed => seed.id === row.id), // Mark as live if not from fallback
-    source: "ReliefWeb API",
+    source: "ReliefWeb API v2",
     christianPercent: state.christianPercentByIso3[normalizeIso3(row.iso3)] ?? null,
     christianLabel: row.christianPercent != null ? "Documented Christian presence (estimated share)" : row.christianLabel || "Documented Christian presence"
   }));
