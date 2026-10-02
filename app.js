@@ -1,16 +1,16 @@
 const FALLBACK_CRISIS_SEED = [
-  { id: "sudan", name: "Sudan", iso3: "SDN", region: "East Africa", type: "Conflict / displacement", started: "2023-04-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/sdn"], ["HDX", "https://data.humdata.org/country/sdn"]] },
-  { id: "afghanistan", name: "Afghanistan", iso3: "AFG", region: "South Asia", type: "Protracted crisis", started: "1978-04-27", christianPresence: "limited", christianLabel: "Small / limited presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/afg"], ["HDX", "https://data.humdata.org/country/afg"]] },
-  { id: "syria", name: "Syria", iso3: "SYR", region: "Middle East", type: "Conflict / displacement", started: "2011-03-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/syr"], ["HDX", "https://data.humdata.org/country/syr"]] },
-  { id: "drc", name: "Democratic Republic of the Congo", iso3: "COD", region: "Central Africa", type: "Conflict / displacement", started: "1996-10-24", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/cod"], ["HDX", "https://data.humdata.org/country/cod"]] },
-  { id: "ukraine", name: "Ukraine", iso3: "UKR", region: "Europe", type: "International armed conflict", started: "2022-02-24", christianPresence: "documented", christianLabel: "Established Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/ukr"], ["HDX", "https://data.humdata.org/country/ukr"]] },
-  { id: "yemen", name: "Yemen", iso3: "YEM", region: "Middle East", type: "Conflict / food insecurity", started: "2014-09-21", christianPresence: "limited", christianLabel: "Very small / restricted presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/yem"], ["HDX", "https://data.humdata.org/country/yem"]] },
-  { id: "palestine", name: "Occupied Palestinian Territory", iso3: "PSE", region: "Middle East", type: "Conflict / humanitarian emergency", started: "2023-10-07", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/pse"], ["HDX", "https://data.humdata.org/country/pse"]] },
-  { id: "myanmar", name: "Myanmar", iso3: "MMR", region: "Southeast Asia", type: "Conflict / displacement", started: "2021-02-01", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/mmr"], ["HDX", "https://data.humdata.org/country/mmr"]] },
-  { id: "somalia", name: "Somalia", iso3: "SOM", region: "Horn of Africa", type: "Drought / displacement / conflict", started: "2011-01-01", christianPresence: "documented", christianLabel: "Small documented community", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/som"], ["HDX", "https://data.humdata.org/country/som"]] },
-  { id: "ethiopia", name: "Ethiopia", iso3: "ETH", region: "East Africa", type: "Conflict / drought / displacement", started: "2020-11-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/eth"], ["HDX", "https://data.humdata.org/country/eth"]] },
-  { id: "nigeria", name: "Nigeria", iso3: "NGA", region: "West Africa", type: "Conflict / displacement", started: "2009-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/nga"], ["HDX", "https://data.humdata.org/country/nga"]] },
-  { id: "haiti", name: "Haiti", iso3: "HTI", region: "Caribbean", type: "Complex emergency / insecurity", started: "2020-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification", sourceLinks: [["ReliefWeb", "https://reliefweb.int/country/hti"], ["HDX", "https://data.humdata.org/country/hti"]] }
+  { id: "sudan", name: "Sudan", iso3: "SDN", region: "East Africa", type: "Conflict / displacement", started: "2023-04-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "afghanistan", name: "Afghanistan", iso3: "AFG", region: "South Asia", type: "Protracted crisis", started: "1978-04-27", christianPresence: "limited", christianLabel: "Small / limited presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "syria", name: "Syria", iso3: "SYR", region: "Middle East", type: "Conflict / displacement", started: "2011-03-15", christianPresence: "documented", christianLabel: "Documented minority presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "drc", name: "Democratic Republic of the Congo", iso3: "COD", region: "Central Africa", type: "Conflict / displacement", started: "1996-10-24", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "ukraine", name: "Ukraine", iso3: "UKR", region: "Europe", type: "International armed conflict", started: "2022-02-24", christianPresence: "documented", christianLabel: "Established Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "yemen", name: "Yemen", iso3: "YEM", region: "Middle East", type: "Conflict / food insecurity", started: "2014-09-21", christianPresence: "limited", christianLabel: "Very small / restricted presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "palestine", name: "Occupied Palestinian Territory", iso3: "PSE", region: "Middle East", type: "Conflict / humanitarian emergency", started: "2023-10-07", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "myanmar", name: "Myanmar", iso3: "MMR", region: "Southeast Asia", type: "Conflict / displacement", started: "2021-02-01", christianPresence: "documented", christianLabel: "Documented Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "somalia", name: "Somalia", iso3: "SOM", region: "Horn of Africa", type: "Drought / displacement / conflict", started: "2011-01-01", christianPresence: "documented", christianLabel: "Small documented community", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "ethiopia", name: "Ethiopia", iso3: "ETH", region: "East Africa", type: "Conflict / drought / displacement", started: "2020-11-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "nigeria", name: "Nigeria", iso3: "NGA", region: "West Africa", type: "Conflict / displacement", started: "2009-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" },
+  { id: "haiti", name: "Haiti", iso3: "HTI", region: "Caribbean", type: "Complex emergency / insecurity", started: "2020-01-01", christianPresence: "documented", christianLabel: "Large Christian presence", christianEvidence: "Curated country-level evidence; requires periodic verification" }
 ];
 
 const DEFAULT_CHRISTIAN_PERCENTAGES = {
@@ -27,6 +27,9 @@ const DEFAULT_CHRISTIAN_PERCENTAGES = {
   UKR: 77.0,
   YEM: 1.0
 };
+
+// HDX HAPI app identifier (base64 encoded)
+const HDX_HAPI_APP_ID = 'SHVtYW5pdGFyaWFuIERhc2hib2FyZDpqd2lsc29uQG9wc2FmZWludGwuY29t';
 
 const state = {
   crises: [],
@@ -130,7 +133,7 @@ function normalizeHapiCountryItem(item) {
     christianPresence: "documented",
     christianLabel: "Current OCHA crisis source",
     christianEvidence: "Live crisis source from OCHA HDX HAPI; source-backed until verified",
-    sourceLinks: [["HDX HAPI", "https://data.humdata.org/"], ["ReliefWeb", `https://reliefweb.int/search?search=${encodeURIComponent(String(name))}`]]
+    sourceLinks: [["HDX HAPI", "https://hapi.humdata.org/docs"], ["ReliefWeb", `https://reliefweb.int/search?search=${encodeURIComponent(String(name))}`]]
   };
 }
 
@@ -152,23 +155,53 @@ async function getJSON(url, label) {
   }
 }
 
-async function fetchGlobalCrisisWatchlist() {
-  const crisisEndpoint = "https://api.humdata.org/api/3/action/hdx_crisisdata_list?active=True";
-  const crisisJson = await getJSON(crisisEndpoint, "OCHA HDX HAPI active crises");
-  if (!crisisJson) return FALLBACK_CRISIS_SEED;
+async function fetchGlobalCrisisWatchlistFromHDXHAPI() {
+  // Query HDX HAPI humanitarian-needs endpoint with app identifier
+  const url = `https://hapi.humdata.org/api/v2/affected-people/humanitarian-needs?app_identifier=${encodeURIComponent(HDX_HAPI_APP_ID)}&admin_level=0&limit=10000`;
+  const json = await getJSON(url, "OCHA HDX HAPI humanitarian needs");
+  if (!json) return FALLBACK_CRISIS_SEED;
 
-  const rawList = Array.isArray(crisisJson)
-    ? crisisJson
-    : Array.isArray(crisisJson?.result)
-      ? crisisJson.result
-      : Array.isArray(crisisJson?.data)
-        ? crisisJson.data
-        : Array.isArray(crisisJson?.records)
-          ? crisisJson.records
-          : [];
+  // HDX HAPI returns {data: [...]} structure
+  const records = Array.isArray(json?.data) ? json.data : [];
+  if (!records.length) return FALLBACK_CRISIS_SEED;
 
-  const normalized = rawList.map(item => normalizeHapiCountryItem(item)).filter(Boolean).slice(0, 12);
-  return normalized.length ? normalized : FALLBACK_CRISIS_SEED;
+  // Aggregate by country (location_code = ISO3)
+  const byCountry = new Map();
+  records.forEach(record => {
+    const iso3 = (record.location_code || "").toUpperCase();
+    if (!iso3 || iso3.length !== 3) return;
+
+    if (!byCountry.has(iso3)) {
+      byCountry.set(iso3, {
+        iso3,
+        locationName: record.location_name || iso3,
+        sectors: new Set(),
+        totalPopulation: 0
+      });
+    }
+
+    const entry = byCountry.get(iso3);
+    if (record.sector_name) {
+      entry.sectors.add(record.sector_name);
+    }
+    entry.totalPopulation += record.population || 0;
+  });
+
+  // Convert to crisis objects
+  const crises = Array.from(byCountry.values()).map(country => ({
+    id: country.iso3.toLowerCase(),
+    iso3: country.iso3,
+    name: country.locationName || country.iso3,
+    region: "Global",
+    type: Array.from(country.sectors).slice(0, 2).join(" / ") || "Humanitarian needs",
+    started: null,
+    christianPresence: "documented",
+    christianLabel: "OCHA HDX HAPI live source",
+    christianEvidence: `Live humanitarian needs data: ${country.totalPopulation.toLocaleString()} people in need`,
+    sourceLinks: [["HDX HAPI", "https://hapi.humdata.org/docs"], ["ReliefWeb", "https://reliefweb.int"]]
+  })).filter(c => c.iso3 && c.iso3 !== "UNK");
+
+  return crises.length ? crises : FALLBACK_CRISIS_SEED;
 }
 
 function extractPlans(json) {
@@ -360,7 +393,9 @@ async function refresh() {
 
   state.christianPercentByIso3 = await loadChristianPercentages();
 
-  const watchlist = await fetchGlobalCrisisWatchlist();
+  // Try HDX HAPI first, fall back to old method if it fails
+  let watchlist = await fetchGlobalCrisisWatchlistFromHDXHAPI();
+  
   state.crises = watchlist;
   state.rows = state.crises.map(row => ({
     ...row,
